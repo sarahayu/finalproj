@@ -6,11 +6,29 @@ import { Map } from 'react-map-gl';
 import mapStyle from './assets/style.json';
 import {TerrainLayer} from '@deck.gl/geo-layers';
 
+// mapStyle.layers = mapStyle.layers.filter(layer => {
+//     let idd = layer.id
+//     let isLabel = /label|place_city|place_capital|poi|name/.test(idd)
+//     return isLabel
+// })
+
+// console.log(JSON.stringify(mapStyle))
+
+// mapStyle.layers.forEach(layer => {
+//   let idd = layer.id
+//   let isWater = /water/.test(idd)
+//   if (isWater) {
+//     layer.layout["text-size"] = 36
+//   }
+
+// })
+
 const INITIAL_VIEW_STATE = {
     longitude: -120.52,
     latitude: 37.14,
     zoom: 7,
-    minZoom: 6.999,
+    minZoom: 7,
+    maxZoom: 11,
     pitch: 50.85,
     bearing: 32.58
 }
@@ -39,7 +57,7 @@ export default function California() {
         new TerrainLayer({
             id: 'terrain',
             minZoom: 7,
-            maxZoom: 13,
+            maxZoom: 11,
             strategy: 'no-overlap',
             elevationDecoder: {
                 rScaler: 5 * 256,
@@ -69,7 +87,7 @@ export default function California() {
                 initialViewState={INITIAL_VIEW_STATE}
                 controller={true}
             >
-                {/* <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} /> */}
+                <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
             </DeckGL>
             <p style={{
                 position: "absolute",
