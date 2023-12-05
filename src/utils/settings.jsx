@@ -1,4 +1,4 @@
-import { AmbientLight, _SunLight as SunLight } from '@deck.gl/core';
+import { AmbientLight, _SunLight as SunLight } from '@deck.gl/core'
 
 export const INITIAL_VIEW_STATE = {
     longitude: -120.52,

@@ -1,31 +1,31 @@
-import { LightingEffect } from '@deck.gl/core';
-import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions';
-import { TerrainLayer } from '@deck.gl/geo-layers';
-import DeckGL from '@deck.gl/react';
-import { OBJLoader } from '@loaders.gl/obj';
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Map } from 'react-map-gl';
+import { LightingEffect } from '@deck.gl/core'
+import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions'
+import { TerrainLayer } from '@deck.gl/geo-layers'
+import DeckGL from '@deck.gl/react'
+import { OBJLoader } from '@loaders.gl/obj'
+import React, { useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { Map } from 'react-map-gl'
 
-import maplibregl from 'maplibre-gl';
+import maplibregl from 'maplibre-gl'
 
-import data from './assets/combine_hex_high_norm.json';
-import mapStyle from './assets/style.json';
-import IconHexTileLayer from './IconHexTileLayer';
-import SolidHexTileLayer from './SolidHexTileLayer';
+import data from './assets/combine_hex_med_norm.json'
+import mapStyle from './assets/style.json'
+import IconHexTileLayer from './IconHexTileLayer'
+import SolidHexTileLayer from './SolidHexTileLayer'
 
-import { colorInterpDifference, valueInterp, valueInterp2 } from './utils/scales';
-import { AMBIENT_LIGHT, DIR_LIGHT, INITIAL_VIEW_STATE } from './utils/settings';
+import { colorInterpDifference, valueInterpUnmet, valueInterpDemand } from './utils/scales'
+import { AMBIENT_LIGHT, DIR_LIGHT, INITIAL_VIEW_STATE } from './utils/settings'
 
 
 export default function App() {
 
   const [slide, setSlide] = useState(0)
   const [effects] = useState(() => {
-    const lightingEffect = new LightingEffect({ ambientLight: AMBIENT_LIGHT, dirLight: DIR_LIGHT });
-    // lightingEffect.shadowColor = [0, 0, 0, 0.5];
-    return [lightingEffect];
-  });
+    const lightingEffect = new LightingEffect({ ambientLight: AMBIENT_LIGHT, dirLight: DIR_LIGHT })
+    // lightingEffect.shadowColor = [0, 0, 0, 0.5]
+    return [lightingEffect]
+  })
   const [counter, setCounter] = useState(1026)
 
   // useEffect(() => {
@@ -43,10 +43,10 @@ export default function App() {
       maxZoom: 11,
       strategy: 'no-overlap',
       elevationDecoder: {
-        rScaler: 0 * 256,
-        gScaler: 0 * 1,
-        bScaler: 0 * 1 / 256,
-        offset: 1
+        rScaler: 5 * 256,
+        gScaler: 5 * 1,
+        bScaler: 5 * 1 / 256,
+        offset: 5 * -32768
       },
       elevationData: `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`,
       texture: `https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}.png`,
@@ -68,7 +68,7 @@ export default function App() {
       raised: false,
       resolution: 1,
       getFillColor: d => colorInterpDifference(d.properties.Difference[counter]),
-      resRange: [6, 6],
+      resRange: [5, 5],
       opacity: 0.2,
       updateTriggers: {
         getFillColor: [counter],
@@ -84,7 +84,7 @@ export default function App() {
     //     extruded: false,
     //     raised: false,
     //     getFillColor: d => colorInterpGW(d.properties.Groundwater[counter]),
-    //     resRange: [6, 6],
+    //     resRange: [5, 5],
     //     opacity: 0.2,
     //     updateTriggers: {
     //         getFillColor: [counter],
@@ -103,22 +103,55 @@ export default function App() {
       }),
       loaders: [OBJLoader],
       mesh: './src/assets/drop.obj',
-      raised: false,
+      raised: true,
       extruded: false,
       resolution: 1,
       getColor: d => [255, 158, 102],
-      getValue: slide == 0 ? d => valueInterp2(d.properties.Demand[counter]) : d => valueInterp(d.properties.UnmetDemand[counter]),
+      getElevation: slide == 0 ? () => 1000 : () => -10000,
+      getValue: d => valueInterpDemand(d.properties.Demand[counter]),
       sizeScale: 3000,
-      resRange: [6, 6],
-      opacity: 0.9,
+      resRange: [5, 5],
+      opacity: slide == 0 ? 1 : -1,
       updateTriggers: {
         getValue: [counter],
+      },
+      transitions: {
+        opacity: 1000,
+        getPosition: 1000,
       },
       extensions: [new TerrainExtension({
         terrainDrawMode: 'offset'
       })],
       // offset: [-0.33, 0],
     }),
+    // new IconHexTileLayer({
+    //   id: `UnmetDemandIcons`,
+    //   data: data.map(reses => {
+    //     let newReses = {}
+    //     for (let hexId in reses) {
+    //       if (reses[hexId].Demand)
+    //         newReses[hexId] = reses[hexId]
+    //     }
+    //     return newReses
+    //   }),
+    //   loaders: [OBJLoader],
+    //   mesh: './src/assets/drop.obj',
+    //   raised: false,
+    //   extruded: false,
+    //   resolution: 1,
+    //   getColor: d => [255, 158, 102],
+    //   getValue: d => valueInterpUnmet(d.properties.UnmetDemand[counter]),
+    //   sizeScale: 3000,
+    //   resRange: [5, 5],
+    //   opacity: 1,
+    //   updateTriggers: {
+    //     getValue: [counter],
+    //   },
+    //   extensions: [new TerrainExtension({
+    //     terrainDrawMode: 'offset'
+    //   })],
+    //   // offset: [-0.33, 0],
+    // }),
   ]
 
   return (
@@ -142,9 +175,9 @@ export default function App() {
         position: 'absolute', display: 'block', bottom: "20px", right: "20px"
       }}>Next Slide</button>
     </>
-  );
+  )
 }
 
 export function renderToDOM(container) {
-  createRoot(container).render(<App />);
+  createRoot(container).render(<App />)
 }

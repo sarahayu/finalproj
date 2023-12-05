@@ -111,6 +111,7 @@ export default class IconHexTileLayer extends CompositeLayer {
         wrapLongitude: this.props.wrapLongitude,
         updateTriggers: this.props.updateTriggers,
         extensions: this.props.extensions,
+        transitions: this.props.transitions,
       }),
     ]
   }
