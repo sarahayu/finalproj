@@ -10,7 +10,7 @@ import { Map } from 'react-map-gl'
 
 import maplibregl from 'maplibre-gl'
 
-import data from './assets/combine_hex_high_norm.json'
+import data from './assets/combine_hex_med_norm.json'
 import mapStyle from './assets/style.json'
 import IconHexTileLayer from './IconHexTileLayer'
 import SolidHexTileLayer from './SolidHexTileLayer'
@@ -81,39 +81,39 @@ export default function App() {
     //   texture: `https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}.png`,
     //   // operation: 'terrain+draw'
     // }),
-    new SolidHexTileLayer({
-      id: `DifferenceLayerHex`,
-      data: data.map(reses => {
-        let newReses = {}
-        for (let hexId in reses) {
-          if (reses[hexId].Difference)
-            newReses[hexId] = reses[hexId]
-        }
-        return newReses
-      }),
-      thicknessRange: [0.65, 0.8],
-      filled: true,
-      extruded: false,
-      raised: false,
-      resolution: 1,
-      getFillColor: d => colorInterpDifference(d.properties.Difference[counter]),
-      resRange: [6, 6],
-      opacity: slide >= 2 ? 0.2 : 0,
-      updateTriggers: {
-        getFillColor: [counter],
-      },
-      transitions: {
-        opacity: {
-          duration: 500,
-          // easing: d3.easeBackIn.overshoot(5),
-        },
-        getFillColor: {
-          duration: 500,
-          // easing: d3.easeBackIn.overshoot(5),
-        },
-      },
-      // extensions: [new TerrainExtension()]
-    }),
+    // new SolidHexTileLayer({
+    //   id: `DifferenceLayerHex`,
+    //   data: data.map(reses => {
+    //     let newReses = {}
+    //     for (let hexId in reses) {
+    //       if (reses[hexId].Difference)
+    //         newReses[hexId] = reses[hexId]
+    //     }
+    //     return newReses
+    //   }),
+    //   thicknessRange: [0.65, 0.8],
+    //   filled: true,
+    //   extruded: false,
+    //   raised: false,
+    //   resolution: 1,
+    //   getFillColor: d => colorInterpDifference(d.properties.Difference[counter]),
+    //   resRange: [5, 5],
+    //   opacity: slide >= 2 ? 0.2 : 0,
+    //   updateTriggers: {
+    //     getFillColor: [counter],
+    //   },
+    //   transitions: {
+    //     opacity: {
+    //       duration: 500,
+    //       // easing: d3.easeBackIn.overshoot(5),
+    //     },
+    //     getFillColor: {
+    //       duration: 500,
+    //       // easing: d3.easeBackIn.overshoot(5),
+    //     },
+    //   },
+    //   // extensions: [new TerrainExtension()]
+    // }),
     // new SolidHexTileLayer({
     //     id: `GroundwaterLayer`,
     //     data,
@@ -123,7 +123,7 @@ export default function App() {
     //     extruded: false,
     //     raised: false,
     //     getFillColor: d => colorInterpGW(d.properties.Groundwater[counter]),
-    //     resRange: [6, 6],
+    //     resRange: [5, 5],
     //     opacity: 0.2,
     //     updateTriggers: {
     //         getFillColor: [counter],
@@ -147,9 +147,11 @@ export default function App() {
       resolution: 1,
       getColor: d => [255, 158, 102],
       // getElevation: slide == 0 ? () => 0 : () => -8000,
-      getValue: d => valueInterpDemand(d.properties.DemandBaseline[counter]),
+      getValue: d => valueInterpDemand(d.properties.DemandBaseline[1026]),
+      getValue2: d => valueInterpDemand(d.properties.DemandBaseline[1027]),
+      transState: slide,
       sizeScale: 3000,
-      resRange: [6, 6],
+      resRange: [5, 5],
       // opacity: slide == 0 ? 1 : -1,
       updateTriggers: {
         getValue: [counter],
@@ -157,7 +159,7 @@ export default function App() {
       transitions: {
         getPosition: {
           duration: 500,
-          easing: d3.easeBackIn.overshoot(2),
+          // easing: d3.easeBackIn.overshoot(2),
         },
       },
       // extensions: [new TerrainExtension({
@@ -183,7 +185,7 @@ export default function App() {
     //   getColor: d => [255, 158, 102],
     //   getValue: d => valueInterpUnmet(d.properties.UnmetDemand[counter]),
     //   sizeScale: 3000,
-    //   resRange: [6, 6],
+    //   resRange: [5, 5],
     //   opacity: 1,
     //   updateTriggers: {
     //     getValue: [counter],
