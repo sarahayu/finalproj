@@ -92,7 +92,8 @@ export default class SolidHexTileLayer extends CompositeLayer {
         getLineWidth: this.props.getLineWidth,
         opacity: this.props.opacity,
         updateTriggers: this.props.updateTriggers,
-        parameters: {cull: true},
+        extensions: this.props.extensions,
+        // parameters: {cull: true},
       }),
     ]
   }
