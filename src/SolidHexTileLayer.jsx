@@ -93,6 +93,7 @@ export default class SolidHexTileLayer extends CompositeLayer {
         opacity: this.props.opacity,
         updateTriggers: this.props.updateTriggers,
         extensions: this.props.extensions,
+        transitions: this.props.transitions,
         // parameters: {cull: true},
       }),
     ]

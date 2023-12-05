@@ -1,29 +1,12 @@
 
-import { CompositeLayer, SolidPolygonLayer, SimpleMeshLayer } from "deck.gl"
-import * as d3Geo from 'd3-geo'
-import * as h3 from 'h3-js'
 import * as d3 from 'd3'
-import { lerp } from '@math.gl/core'
-
-const FORMATIONS = [
-    /* none         */[],
-    /* dot          */[[0, 0]],
-    /* line         */[[0, 0.33], [0, -0.33]],
-    /* triangle     */[[-0.33, -0.33], [0.33, -0.33], [0, 0.29]],
-    /* square       */[[-0.33, -0.33], [0.33, -0.33], [-0.33, 0.33], [0.33, 0.33]],
-    /* house        */[[-0.33, -0.67], [0.33, -0.67], [-0.33, 0], [0.33, 0], [0, 0.58]],
-    /* rectangle    */[[-0.33, -0.67], [0.33, -0.67], [-0.33, 0], [0.33, 0], [-0.33, 0.67], [0.33, 0.67]],
-    /* hexagon      */[[0, 0], [-0.67, 0], [0.67, 0], [-0.33, 0.58], [0.33, 0.58], [-0.33, -0.58], [0.33, -0.58]],
-]
-
-// -- icon layer
-// -- altitude
-// - answer mentorship email
-// - macarthur email about timesheet
+import { CompositeLayer, SimpleMeshLayer } from "deck.gl"
+import * as h3 from 'h3-js'
+import { FORMATIONS } from "./utils/utils"
 
 const formationInterp = d3.scaleQuantize()
   .domain([0, 1])
-  .range(FORMATIONS);
+  .range(d3.range(0, FORMATIONS.length));
 
 export default class IconHexTileLayer extends CompositeLayer {
 
@@ -62,19 +45,20 @@ export default class IconHexTileLayer extends CompositeLayer {
 
       const [y, x] = h3.cellToLatLng(hexID)
 
-      for (let [dx, dy] of this.props.getValue ? formationInterp(this.props.getValue({ properties })) : FORMATIONS[1]) {
+      const id = formationInterp(this.props.getValue({ properties }))
+
+      // if (id2 > id) {
+      //   console.log(id, id2)
+      //   return
+      // }
+
+      for (let [dx, dy, dz] of this.props.getValue ? FORMATIONS[id] : FORMATIONS[1]) {
 
         let [ddx, ddy] = this.props.offset
-        if (this.props.raised)
-          data.push({
-            position: [x + dx * edgeLen + ddx * edgeLen, y + dy * edgeLen + ddy * edgeLen, this.props.getElevation({ properties })],
-            properties,
-          })
-        else
-          data.push({
-            position: [x + dx * edgeLen + ddx * edgeLen, y + dy * edgeLen + ddy * edgeLen],
-            properties,
-          })
+        data.push({
+          position: [x + dx * edgeLen + ddx * edgeLen, y + dy * edgeLen + ddy * edgeLen, this.props.getElevation({ properties }) + dz * 5000],
+          properties,
+        })
       }
 
     })
@@ -125,5 +109,6 @@ IconHexTileLayer.defaultProps = {
   resolution: 0,
   resRange: [5, 5],
   getValue: undefined,
+  getElevation: () => 0,
   offset: [0, 0],
 }

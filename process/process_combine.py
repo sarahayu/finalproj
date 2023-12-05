@@ -21,8 +21,9 @@ with open("groundwater_hex_high_norm.json") as water_file, \
             for hexId in water_res:
                 if hexId in diff_scen_res:
                     water_res[hexId]["UnmetDemand"] = diff_scen_res[hexId]["UnmetDemand"]
-                    water_res[hexId]["Demand"] = diff_scen_res[hexId]["Demand"]
                     water_res[hexId]["Difference"] = diff_scen_res[hexId]["Difference"]
+                    water_res[hexId]["DemandBaseline"] = diff_scen_res[hexId]["DemandBaseline"]
+                    water_res[hexId]["DemandDifference"] = diff_scen_res[hexId]["DemandDifference"]
                 if hexId in landuse_res:
                     water_res[hexId]["LandUse"] = landuse_res[hexId]["LandUse"]
     

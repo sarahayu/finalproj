@@ -80,8 +80,9 @@ def avgGroundwater(arrObjs):
 def avgDiffUnmet(arrObjs):
     return {
         "UnmetDemand": avgArrOfArr([ obj["UnmetDemand"] for obj in arrObjs]),
-        "Demand": avgArrOfArr([ obj["Demand"] for obj in arrObjs]),
         "Difference": avgArrOfArr([ obj["Difference"] for obj in arrObjs]),
+        "DemandBaseline": avgArrOfArr([ obj["DemandBaseline"] for obj in arrObjs]),
+        "DemandDifference": avgArrOfArr([ obj["DemandDifference"] for obj in arrObjs]),
     }
 def aggLandUse(arrObjs):
     return {
@@ -331,6 +332,7 @@ def geojsonToHexPoints(dataFeatures, avgFn, resRange):
 with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes/demand_units") as region_file, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/unmetdemand") as temporal_file, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/unmetdemand") as temporal_file_bl, \
+    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/demand") as temporal_file_dem_bl, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/demand") as temporal_file_dem:
  
     # Reading from json file
@@ -338,6 +340,7 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
     temporal_object = ujson.load(temporal_file)
     temporal_bl_object = ujson.load(temporal_file_bl)
     temporal_dem_object = ujson.load(temporal_file_dem)
+    temporal_dem_bl_object = ujson.load(temporal_file_dem_bl)
 
     new_fs = [f for f in region_object["features"] if f["properties"]["DU_ID"] and f["properties"]["DU_ID"] in temporal_object and f["properties"]["DU_ID"] in temporal_dem_object]
     
@@ -351,16 +354,23 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
 
         tot_areas[idd] += area.area(f["geometry"]) / 6e8
 
+    for idd in temporal_dem_object:
+        if temporal_dem_object[idd]["0"] is None:
+            for i in temporal_dem_object[idd]:
+                temporal_dem_object[idd][i] = 0
+    for idd in temporal_dem_bl_object:
+        if temporal_dem_bl_object[idd]["0"] is None:
+            for i in temporal_dem_bl_object[idd]:
+                temporal_dem_bl_object[idd][i] = 0
+
 
     for f in new_fs:
         idd = f["properties"]["DU_ID"]
         rea = tot_areas[idd]
-        for i in temporal_dem_object[idd]:
-            if temporal_dem_object[idd][i] is None:
-                temporal_dem_object[idd][i] = 0
         f["properties"]["UnmetDemand"] = [(temporal_object[idd][i]) / rea for i in temporal_object[idd]]
-        f["properties"]["Demand"] = [(temporal_dem_object[idd][i]) / rea for i in temporal_dem_object[idd]]
         f["properties"]["Difference"] = [(temporal_object[idd][i] - temporal_bl_object[idd][i]) / rea for i in temporal_object[idd]]
+        f["properties"]["DemandBaseline"] = [(temporal_dem_bl_object[idd][i]) / rea for i in temporal_dem_object[idd]]
+        f["properties"]["DemandDifference"] = [(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i]) / rea for i in temporal_dem_object[idd]]
 
     region_object["features"] = new_fs
 
