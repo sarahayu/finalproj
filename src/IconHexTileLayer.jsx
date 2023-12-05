@@ -2,7 +2,7 @@
 import * as d3 from 'd3'
 import { CompositeLayer, SimpleMeshLayer } from "deck.gl"
 import * as h3 from 'h3-js'
-import { FORMATIONS, INTERIM_FORMATIONS } from "./utils/utils"
+import { FORMATIONS } from "./utils/utils"
 
 const formationInterp = d3.scaleQuantize()
   .domain([0, 1])
@@ -46,14 +46,13 @@ export default class IconHexTileLayer extends CompositeLayer {
       const [y, x] = h3.cellToLatLng(hexID)
 
       const id = formationInterp(this.props.getValue({ properties }))
-      const id2 = formationInterp(this.props.getValue2({ properties }))
 
       // if (id2 > id) {
       //   console.log(id, id2)
       //   return
       // }
 
-      for (let [dx, dy, dz] of this.props.getValue ? (this.props.transState == 1 ? INTERIM_FORMATIONS[id][id2] : (this.props.transState == 0 ? FORMATIONS[id] : FORMATIONS[id2])) : FORMATIONS[1]) {
+      for (let [dx, dy, dz] of this.props.getValue ? FORMATIONS[id] : FORMATIONS[1]) {
 
         let [ddx, ddy] = this.props.offset
         data.push({

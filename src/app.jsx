@@ -18,6 +18,7 @@ import SolidHexTileLayer from './SolidHexTileLayer'
 import { colorInterpDifference, valueInterpUnmet, valueInterpDemand } from './utils/scales'
 import { AMBIENT_LIGHT, DIR_LIGHT, INITIAL_VIEW_STATE } from './utils/settings'
 import { BitmapLayer } from 'deck.gl'
+import AnimatedIconHexTileLayer from './AnimatedIconHexTileLayer'
 
 
 export default function App() {
@@ -38,7 +39,7 @@ export default function App() {
       setHasStarted(true)
     }
     else {
-      timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 1500)
+      timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 1000)
     }
     return function () {
       clearTimeout(timer)
@@ -130,7 +131,7 @@ export default function App() {
     //     },
     //     extensions: [new TerrainExtension()]
     // }),
-    new IconHexTileLayer({
+    new AnimatedIconHexTileLayer({
       id: `DemandIcons`,
       data: data.map(reses => {
         let newReses = {}
@@ -146,21 +147,11 @@ export default function App() {
       extruded: false,
       resolution: 1,
       getColor: d => [255, 158, 102],
-      // getElevation: slide == 0 ? () => 0 : () => -8000,
-      getValue: d => valueInterpDemand(d.properties.DemandBaseline[1026]),
-      getValue2: d => valueInterpDemand(d.properties.DemandBaseline[1027]),
-      transState: slide,
+      getValue: d => valueInterpDemand(d.properties.DemandBaseline[counter]),
       sizeScale: 3000,
       resRange: [5, 5],
-      // opacity: slide == 0 ? 1 : -1,
       updateTriggers: {
         getValue: [counter],
-      },
-      transitions: {
-        getPosition: {
-          duration: 500,
-          // easing: d3.easeBackIn.overshoot(2),
-        },
       },
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
