@@ -14,5 +14,10 @@ export default function Clock({ counter }) {
                 .endAngle(Math.PI * monthIdx / 12 * 2))
             .attr("fill", monthIdx <= 3 ? "pink" : (monthIdx <= 6 ? "yellow" : (monthIdx <= 9 ? "orange" : "white")))
         d3.select("#date").text(dateInterpIdx(counter).toLocaleString('default', { month: 'long' }))
+
+        return function() {
+            d3.select("#clock g path").attr("d", "")
+            d3.select("#date").text("")
+        }
     })
 }

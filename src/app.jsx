@@ -10,7 +10,7 @@ import { Map } from 'react-map-gl'
 
 import maplibregl from 'maplibre-gl'
 
-import data from './assets/combine_hex_med_norm.json'
+import _data from './assets/combine_hex_med_norm.json'
 import mapStyle from './assets/style.json'
 import IconHexTileLayer from './IconHexTileLayer'
 import SolidHexTileLayer from './SolidHexTileLayer'
@@ -21,6 +21,15 @@ import { BitmapLayer } from 'deck.gl'
 import AnimatedIconHexTileLayer from './AnimatedIconHexTileLayer'
 import Card from './Card'
 import Clock from './Clock'
+
+let data = _data.map(reses => {
+  let newReses = {}
+  for (let hexId in reses) {
+    if (reses[hexId].DemandBaseline)
+      newReses[hexId] = reses[hexId]
+  }
+  return newReses
+})
 
 
 export default function App() {
@@ -111,26 +120,16 @@ export default function App() {
     // }),
     new SolidHexTileLayer({
       id: `GroundwaterLayer`,
-      data: data.map(reses => {
-        let newReses = {}
-        for (let hexId in reses) {
-          if (reses[hexId].DemandBaseline)
-            newReses[hexId] = reses[hexId]
-        }
-        return newReses
-      }),
+      data, 
       thicknessRange: [0.65, 0.80],
       filled: true,
       resolution: 1,
       extruded: false,
       raised: false,
-      getFillColor: d => colorInterpGW(d.properties.Groundwater[counter]),
+      getFillColor: d => colorInterpGW(d.properties.Groundwater[slide <= 2 ? counter : (slide <= 4 ? 1026 : 1197)]),
       resRange: [5, 5],
       visible: slide >= 1,
-      opacity: slide == 2 ? 0.8 : 0,
-      updateTriggers: {
-        getFillColor: [counter],
-      },
+      opacity: slide >= 2 ? 0.8 : 0,
       transitions: {
         opacity: 250,
       }
@@ -138,14 +137,7 @@ export default function App() {
     }),
     new IconHexTileLayer({
       id: `DemandIcons`,
-      data: data.map(reses => {
-        let newReses = {}
-        for (let hexId in reses) {
-          if (reses[hexId].DemandBaseline)
-            newReses[hexId] = reses[hexId]
-        }
-        return newReses
-      }),
+      data, 
       loaders: [OBJLoader],
       mesh: './src/assets/drop.obj',
       raised: true,
@@ -157,9 +149,28 @@ export default function App() {
       resRange: [5, 5],
       visible: slide == 1,
       opacity: 1,
-      updateTriggers: {
-        getValue: [slide],
-      },
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `UnmetDemandIcons`,
+      data, 
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: 1,
+      getColor: d => [255, 158, 102],
+      getValue: slide <= 2 ? 0 : (slide <= 3 ? d => valueInterpDemand(d.properties.DemandBaseline[1026]) : (
+        slide <= 4 ? d => valueInterpUnmet(d.properties.UnmetDemand[1026]) : (
+          slide <= 5 ? d => valueInterpDemand(d.properties.DemandBaseline[1197]) : d => valueInterpUnmet(d.properties.UnmetDemand[1197])
+        )
+      )),
+      sizeScale: 3000,
+      resRange: [5, 5],
+      visible: slide >= 2,
+      opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
@@ -177,12 +188,17 @@ export default function App() {
         <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
       </DeckGL>
       <Card {...{ slide }} />
-      <Clock {...{ counter }}/>
+      { slide >= 1 && <Clock counter={ slide <= 2 ? counter : (slide <= 4 ? 1026 : 1197) }/> }
       <button onClick={() => {
         setSlide(s => s + 1)
       }} style={{
         position: 'absolute', display: 'block', bottom: "20px", right: "20px"
       }}>Next Slide</button>
+      <button onClick={() => {
+        setSlide(s => s - 1)
+      }} style={{
+        position: 'absolute', display: 'block', bottom: "20px", left: "20px"
+      }}>Prev Slide</button>
     </>
   )
 }

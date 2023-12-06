@@ -42,7 +42,7 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
                     transitioning: false,
                     prevGetValueFn: this.props.getValue,
                 }))
-            }, 150)
+            }, 300)
         }
 
 
@@ -135,7 +135,7 @@ AnimatedIconHexTileLayer.defaultProps = {
     offset: [0, 0],
     transitions: {
       getPosition: {
-        duration: 100,
+        duration: 300,
         easing: d3.easeBackOut.overshoot(2),
       },
     },
