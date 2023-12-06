@@ -21,3 +21,5 @@ export const DIR_LIGHT = new SunLight({
     intensity: 0.9,
     // _shadow: true
 });
+
+export function inRange(a, x, y) { return a >= x && a <= y }

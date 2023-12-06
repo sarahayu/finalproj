@@ -15,10 +15,12 @@ import mapStyle from './assets/style.json'
 import IconHexTileLayer from './IconHexTileLayer'
 import SolidHexTileLayer from './SolidHexTileLayer'
 
-import { colorInterpDifference, valueInterpUnmet, valueInterpDemand } from './utils/scales'
+import { colorInterpDifference, valueInterpUnmet, valueInterpDemand, colorInterpGW } from './utils/scales'
 import { AMBIENT_LIGHT, DIR_LIGHT, INITIAL_VIEW_STATE } from './utils/settings'
 import { BitmapLayer } from 'deck.gl'
 import AnimatedIconHexTileLayer from './AnimatedIconHexTileLayer'
+import Card from './Card'
+import Clock from './Clock'
 
 
 export default function App() {
@@ -30,17 +32,9 @@ export default function App() {
     return [lightingEffect]
   })
   const [counter, setCounter] = useState(1026)
-  const [hasStarted, setHasStarted] = useState(false)
 
   useEffect(() => {
-    let timer;
-    if (!hasStarted) {
-      timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 10000)
-      setHasStarted(true)
-    }
-    else {
-      timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 1000)
-    }
+    let timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 250)
     return function () {
       clearTimeout(timer)
 
@@ -115,23 +109,34 @@ export default function App() {
     //   },
     //   // extensions: [new TerrainExtension()]
     // }),
-    // new SolidHexTileLayer({
-    //     id: `GroundwaterLayer`,
-    //     data,
-    //     thicknessRange: [0.65, 0.80],
-    //     filled: true,
-    //     resolution: 1,
-    //     extruded: false,
-    //     raised: false,
-    //     getFillColor: d => colorInterpGW(d.properties.Groundwater[counter]),
-    //     resRange: [5, 5],
-    //     opacity: 0.2,
-    //     updateTriggers: {
-    //         getFillColor: [counter],
-    //     },
-    //     extensions: [new TerrainExtension()]
-    // }),
-    new AnimatedIconHexTileLayer({
+    new SolidHexTileLayer({
+      id: `GroundwaterLayer`,
+      data: data.map(reses => {
+        let newReses = {}
+        for (let hexId in reses) {
+          if (reses[hexId].DemandBaseline)
+            newReses[hexId] = reses[hexId]
+        }
+        return newReses
+      }),
+      thicknessRange: [0.65, 0.80],
+      filled: true,
+      resolution: 1,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpGW(d.properties.Groundwater[counter]),
+      resRange: [5, 5],
+      visible: slide >= 1,
+      opacity: slide == 2 ? 0.8 : 0,
+      updateTriggers: {
+        getFillColor: [counter],
+      },
+      transitions: {
+        opacity: 250,
+      }
+      // extensions: [new TerrainExtension()]
+    }),
+    new IconHexTileLayer({
       id: `DemandIcons`,
       data: data.map(reses => {
         let newReses = {}
@@ -150,42 +155,15 @@ export default function App() {
       getValue: d => valueInterpDemand(d.properties.DemandBaseline[counter]),
       sizeScale: 3000,
       resRange: [5, 5],
+      visible: slide == 1,
+      opacity: 1,
       updateTriggers: {
-        getValue: [counter],
+        getValue: [slide],
       },
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
-      // offset: [-0.33, 0],
     }),
-    // new IconHexTileLayer({
-    //   id: `UnmetDemandIcons`,
-    //   data: data.map(reses => {
-    //     let newReses = {}
-    //     for (let hexId in reses) {
-    //       if (reses[hexId].Demand)
-    //         newReses[hexId] = reses[hexId]
-    //     }
-    //     return newReses
-    //   }),
-    //   loaders: [OBJLoader],
-    //   mesh: './src/assets/drop.obj',
-    //   raised: false,
-    //   extruded: false,
-    //   resolution: 1,
-    //   getColor: d => [255, 158, 102],
-    //   getValue: d => valueInterpUnmet(d.properties.UnmetDemand[counter]),
-    //   sizeScale: 3000,
-    //   resRange: [5, 5],
-    //   opacity: 1,
-    //   updateTriggers: {
-    //     getValue: [counter],
-    //   },
-    //   extensions: [new TerrainExtension({
-    //     terrainDrawMode: 'offset'
-    //   })],
-    //   // offset: [-0.33, 0],
-    // }),
   ]
 
   return (
@@ -198,11 +176,8 @@ export default function App() {
       >
         <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
       </DeckGL>
-      <p style={{
-        position: "absolute",
-        top: "0",
-        left: "0",
-      }}>This is California.</p>
+      <Card {...{ slide }} />
+      <Clock {...{ counter }}/>
       <button onClick={() => {
         setSlide(s => s + 1)
       }} style={{
