@@ -8,7 +8,8 @@ const TEXT = {
     4: "What is the unmet?",
     5: "Let's try another one",
     6: "What is the unmet?",
-    7: "We can see as we cycle through unmet demand",
+    7: "This is the average over 100 years",
+    8: "If we zoom in",
 }
 
 const TEXT_LEN = Object.values(TEXT).length

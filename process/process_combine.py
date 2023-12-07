@@ -3,10 +3,22 @@ from functools import reduce
 import math
 from PIL import Image
 
+MMIN = 5
+MMAX = 6
+ATTRS = [
+    "UnmetDemandBaseline",
+    "UnmetDemand",
+    "Difference",
+    "DemandBaseline",
+    # "DemandDifference",
+    # "SupplyBaseline",
+    # "Supply",
+]
+
 # Opening JSON file
-with open("groundwater_hex_norm_6.json") as water_file, \
-    open("diff_unmet_hex_norm_6.json") as difference_scenario_file, \
-    open("landuse_hex_norm_6.json") as landuse_file:
+with open(f"groundwater_hex_{MMIN}_{MMAX}.json") as water_file, \
+    open(f"diff_unmet_hex_{MMIN}_{MMAX}.json") as difference_scenario_file, \
+    open(f"landuse_hex_{MMIN}_{MMAX}.json") as landuse_file:
  
     # Reading from json file
     water_object = ujson.load(water_file)
@@ -20,14 +32,12 @@ with open("groundwater_hex_norm_6.json") as water_file, \
 
             for hexId in water_res:
                 if hexId in diff_scen_res:
-                    water_res[hexId]["UnmetDemandBaseline"] = diff_scen_res[hexId]["UnmetDemandBaseline"]
-                    water_res[hexId]["UnmetDemand"] = diff_scen_res[hexId]["UnmetDemand"]
-                    water_res[hexId]["Difference"] = diff_scen_res[hexId]["Difference"]
-                    water_res[hexId]["DemandBaseline"] = diff_scen_res[hexId]["DemandBaseline"]
-                    water_res[hexId]["DemandDifference"] = diff_scen_res[hexId]["DemandDifference"]
+                    for aatr in ATTRS:
+                        water_res[hexId][aatr] = diff_scen_res[hexId][aatr]
+                        water_res[hexId][aatr + "Average"] = diff_scen_res[hexId][aatr + "Average"]
                 if hexId in landuse_res:
                     water_res[hexId]["LandUse"] = landuse_res[hexId]["LandUse"]
     
     
-    with open("combine_hex_norm_6.json", "w") as outfile:
+    with open(f"combine_hex_{MMIN}_{MMAX}.json", "w") as outfile:
         ujson.dump(water_object, outfile)

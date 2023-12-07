@@ -9,6 +9,14 @@ export const colorInterpDifference = (unmetDemand) => saturate(d3.interpolatePRG
     d3.scaleLinear().domain([-30, 30]).range([0, 1])(unmetDemand)
 ).replace(/[^\d,]/g, '').split(',').map(d => Number(d)))
 
+export const colorInterpUnmet = (unmetDemand) => saturate(d3.interpolatePurples(
+    d3.scaleLinear().domain([-50, 0]).range([1, 0])(unmetDemand)
+  ).replace(/[^\d,]/g, '').split(',').map(d => Number(d)))
+
+export const colorInterpDemand = (demand) => d3.interpolate((d3.interpolateOranges(
+    d3.scaleLinear().domain([0, 150]).range([0, 1])(demand)
+)), "white")(0.5).replace(/[^\d,]/g, '').split(',').map(d => Number(d))
+
 export const valueInterpUnmet = d3.scaleLinear()
     .domain([-150, 0])
     .range([1, 0])
@@ -23,3 +31,8 @@ export const dateInterpIdx = d3.scaleTime()
     .domain([new Date('10/31/1921'), new Date('9/30/2021')])
     .range([0, 1199])
     .invert
+
+export const resScale = d3.scaleLinear()
+    .domain([7, 10])
+    .range([0, 1])
+    .clamp(true)

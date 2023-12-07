@@ -73,7 +73,7 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
 
             const [y, x] = h3.cellToLatLng(hexID)
 
-            const id = formationInterp(this.props.getValue({ properties }))
+            const id = this.props.getValue ? formationInterp(this.props.getValue({ properties })) : 1
 
             for (let [dx, dy, dz] of this.props.getValue ? (transitioning ? INTERIM_FORMATIONS[formationInterp(prevGetValueFn({ properties }))][id] : FORMATIONS[id]) : FORMATIONS[1]) {
 
@@ -135,9 +135,13 @@ AnimatedIconHexTileLayer.defaultProps = {
     getElevation: () => 0,
     offset: [0, 0],
     transitions: {
-      getPosition: {
-        duration: 300,
-        easing: d3.easeBackOut.overshoot(2),
-      },
+        getPosition: {
+            duration: 300,
+            easing: d3.easeBackOut.overshoot(2),
+        },
+        getColor: {
+            duration: 300,
+            easing: d3.easeBackOut.overshoot(2),
+        },
     },
 }

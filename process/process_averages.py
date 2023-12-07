@@ -85,24 +85,21 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
             avgsSupplyBaseline[i].add_to_avg(temporal_supply_bl_object[idd][i], rea)
             avgsSupply[i].add_to_avg(temporal_supply_object[idd][i], rea)
 
-        # if temporal_dem_bl_object[idd][0] < 0:
-        # print(f'last added is {temporal_dem_bl_object[idd][0]}')
-        # print(f'avg is {avgsDemandBaseline[0].cur_avg}')
-        # if avgsDemandBaseline[0].get_avg() < 0 and last_cur_avg >= 0:
-        #     print(f'N is {last_cur_N}')
-        #     print(f'avg is {last_cur_avg}')
-        #     print(f'N is {avgsDemandBaseline[0].cur_N}')
-        #     print(f'avg is {avgsDemandBaseline[0].cur_avg}')
+    
+    # with open("baseline_groundwater.json") as region_file:
+    
+    #     # Reading from json file
+    #     region_object = ujson.load(region_file)
 
-        # last_cur_N = avgsDemandBaseline[0].cur_N
-        # last_cur_avg = avgsDemandBaseline[0].cur_avg
-        # f["properties"]["UnmetDemand"] = [(temporal_object[idd][i]) / rea for i in temporal_object[idd]]
-        # f["properties"]["Difference"] = [(temporal_object[idd][i] - temporal_bl_object[idd][i]) / rea for i in temporal_object[idd]]
-        # f["properties"]["DemandBaseline"] = [(temporal_dem_bl_object[idd][i]) / rea for i in temporal_dem_object[idd]]
-        # f["properties"]["DemandDifference"] = [(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i]) / rea for i in temporal_dem_object[idd]]
+            
+    #     new_fs = [f for f in region_object["features"] if f["properties"]["DU_ID"]]
 
-    # print([r.get_avg() for r in avgsDemandBaseline])
-    # print(idx)
+    #     with open(f"groundwater_hex_{MMIN}_{MMAX}.json", "w") as outfile:
+
+    #         hex_object = geojsonToHexPoints(region_object["features"], avgGroundwater, [MMIN, MMAX])
+
+    #         ujson.dump(hex_object, outfile)
+
     with open("averages.csv", "w") as outfile:
         outfile.write(",".join(["averageUnmetDemandBaseline"] + [str(r.get_avg()) for r in avgsUnmetDemandBaseline]) + "\n")
         outfile.write(",".join(["averageUnmetDemand"] + [str(r.get_avg()) for r in avgsUnmetDemand]) + "\n")

@@ -5,6 +5,18 @@ import area
 from PIL import Image
 import string
 
+MMIN = 5
+MMAX = 6
+ATTRS = [
+    "UnmetDemandBaseline",
+    "UnmetDemand",
+    "Difference",
+    "DemandBaseline",
+    # "DemandDifference",
+    # "SupplyBaseline",
+    # "Supply",
+]
+
 def latlngToMerc(lat, lon):
     z = 5
 
@@ -43,7 +55,7 @@ def avgArrOfArr(arr):
         for j in range(0, len(arr[0])):
             if j != 1201:
                 # print(j)
-                avgArr.append(avg([float(a[j]) for a in arr]))
+                avgArr.append(int(round(avg([float(a[j]) for a in arr]))))
 
     return avgArr
 
@@ -74,17 +86,43 @@ def maxCounter(arr):
 #   return avgObj
 # }
 def avgGroundwater(arrObjs):
+    avgArr = avgArrOfArr([ [obj["Groundwater"][k] for k in obj["Groundwater"]] for obj in arrObjs])
     return {
-        "Groundwater": avgArrOfArr([ [obj["Groundwater"][k] for k in obj["Groundwater"]] for obj in arrObjs]),
+        "Groundwater": avgArr,
+        "GroundwaterAverage": avg(avgArr)
     }
 def avgDiffUnmet(arrObjs):
-    return {
-        "UnmetDemandBaseline": avgArrOfArr([ obj["UnmetDemandBaseline"] for obj in arrObjs]),
-        "UnmetDemand": avgArrOfArr([ obj["UnmetDemand"] for obj in arrObjs]),
-        "Difference": avgArrOfArr([ obj["Difference"] for obj in arrObjs]),
-        "DemandBaseline": avgArrOfArr([ obj["DemandBaseline"] for obj in arrObjs]),
-        "DemandDifference": avgArrOfArr([ obj["DemandDifference"] for obj in arrObjs]),
-    }
+    averagedObj = {}
+    if "UnmetDemandBaseline" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["UnmetDemandBaseline"] for obj in arrObjs])
+        averagedObj["UnmetDemandBaseline"] = avgArr
+        averagedObj["UnmetDemandBaselineAverage"] = avg(avgArr)
+    if "UnmetDemand" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["UnmetDemand"] for obj in arrObjs])
+        averagedObj["UnmetDemand"] = avgArr
+        averagedObj["UnmetDemandAverage"] = avg(avgArr)
+    if "Difference" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["Difference"] for obj in arrObjs])
+        averagedObj["Difference"] = avgArr
+        averagedObj["DifferenceAverage"] = avg(avgArr)
+    if "DemandBaseline" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["DemandBaseline"] for obj in arrObjs])
+        averagedObj["DemandBaseline"] = avgArr
+        averagedObj["DemandBaselineAverage"] = avg(avgArr)
+    if "DemandDifference" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["DemandDifference"] for obj in arrObjs])
+        averagedObj["DemandDifference"] = avgArr
+        averagedObj["DemandDifferenceAverage"] = avg(avgArr)
+    if "SupplyBaseline" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["SupplyBaseline"] for obj in arrObjs])
+        averagedObj["SupplyBaseline"] = avgArr
+        averagedObj["SupplyBaselineAverage"] = avg(avgArr)
+    if "Supply" in ATTRS: 
+        avgArr = avgArrOfArr([ obj["Supply"] for obj in arrObjs])
+        averagedObj["Supply"] = avgArr
+        averagedObj["SupplyAverage"] = avg(avgArr)
+
+    return averagedObj
 def aggLandUse(arrObjs):
     return {
         "LandUse": maxCounter([ obj["LandUse"] for obj in arrObjs]),
@@ -377,18 +415,20 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
     for f in new_fs:
         idd = f["properties"]["DU_ID"]
         rea = tot_areas[idd]
-        f["properties"]["UnmetDemandBaseline"] = [(temporal_bl_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
-        f["properties"]["UnmetDemand"] = [(temporal_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
-        f["properties"]["Difference"] = [(temporal_object[idd][i] - temporal_bl_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
-        f["properties"]["DemandBaseline"] = [(temporal_dem_bl_object[idd][i]) / rea for i in range(len(temporal_dem_object[idd]))]
-        f["properties"]["DemandDifference"] = [(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i]) / rea for i in range(len(temporal_dem_object[idd]))]
+        if "UnmetDemandBaseline" in ATTRS: f["properties"]["UnmetDemandBaseline"] = [(temporal_bl_object[idd][i]) / rea for i in range(len(temporal_bl_object[idd]))]
+        if "UnmetDemand" in ATTRS: f["properties"]["UnmetDemand"] = [(temporal_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
+        if "Difference" in ATTRS: f["properties"]["Difference"] = [(temporal_object[idd][i] - temporal_bl_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
+        if "DemandBaseline" in ATTRS: f["properties"]["DemandBaseline"] = [(temporal_dem_bl_object[idd][i]) / rea for i in range(len(temporal_dem_bl_object[idd]))]
+        if "DemandDifference" in ATTRS: f["properties"]["DemandDifference"] = [(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i]) / rea for i in range(len(temporal_dem_object[idd]))]
+        if "SupplyBaseline" in ATTRS: f["properties"]["SupplyBaseline"] = [(temporal_supply_bl_object[idd][i]) / rea for i in range(len(temporal_supply_bl_object[idd]))]
+        if "Supply" in ATTRS: f["properties"]["Supply"] = [(temporal_supply_object[idd][i]) / rea for i in range(len(temporal_supply_object[idd]))]
 
     region_object["features"] = new_fs
 
         
-    with open("diff_unmet_hex_norm_6.json", "w") as outfile:
+    with open(f"diff_unmet_hex_{MMIN}_{MMAX}.json", "w") as outfile:
 
-        hex_object = geojsonToHexPoints(region_object["features"], avgDiffUnmet, [6, 6])
+        hex_object = geojsonToHexPoints(region_object["features"], avgDiffUnmet, [MMIN, MMAX])
 
         ujson.dump(hex_object, outfile)
 
@@ -407,9 +447,9 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
     region_object["features"] = new_fs
 
         
-    with open("landuse_hex_norm_6.json", "w") as outfile:
+    with open(f"landuse_hex_{MMIN}_{MMAX}.json", "w") as outfile:
 
-        hex_object = geojsonToHexPoints(region_object["features"], aggLandUse, [6, 6])
+        hex_object = geojsonToHexPoints(region_object["features"], aggLandUse, [MMIN, MMAX])
 
         ujson.dump(hex_object, outfile)
 
@@ -420,9 +460,9 @@ with open("baseline_groundwater.json") as region_file:
     region_object = ujson.load(region_file)
 
         
-    with open("groundwater_hex_norm_6.json", "w") as outfile:
+    with open(f"groundwater_hex_{MMIN}_{MMAX}.json", "w") as outfile:
 
-        hex_object = geojsonToHexPoints(region_object["features"], avgGroundwater, [6, 6])
+        hex_object = geojsonToHexPoints(region_object["features"], avgGroundwater, [MMIN, MMAX])
 
         ujson.dump(hex_object, outfile)
     

@@ -45,14 +45,14 @@ export default class IconHexTileLayer extends CompositeLayer {
 
       const [y, x] = h3.cellToLatLng(hexID)
 
-      const id = formationInterp(this.props.getValue({ properties }))
+      const id = this.props.getValue ? formationInterp(this.props.getValue({ properties })) : 1
 
       // if (id2 > id) {
       //   console.log(id, id2)
       //   return
       // }
 
-      for (let [dx, dy, dz] of this.props.getValue ? FORMATIONS[id] : FORMATIONS[1]) {
+      for (let [dx, dy, dz] of FORMATIONS[id]) {
 
         let [ddx, ddy] = this.props.offset
         data.push({
