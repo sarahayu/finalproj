@@ -10,13 +10,13 @@ import { Map } from 'react-map-gl'
 
 import maplibregl from 'maplibre-gl'
 
-import _data from './assets/combine_hex_med_norm.json'
+import _data from './assets/combine_hex_norm_4.json'
 import mapStyle from './assets/style.json'
 import IconHexTileLayer from './IconHexTileLayer'
 import SolidHexTileLayer from './SolidHexTileLayer'
 
 import { colorInterpDifference, valueInterpUnmet, valueInterpDemand, colorInterpGW } from './utils/scales'
-import { AMBIENT_LIGHT, DIR_LIGHT, INITIAL_VIEW_STATE } from './utils/settings'
+import { AMBIENT_LIGHT, DIR_LIGHT, INITIAL_VIEW_STATE, inRange } from './utils/settings'
 import { BitmapLayer } from 'deck.gl'
 import AnimatedIconHexTileLayer from './AnimatedIconHexTileLayer'
 import Card from './Card'
@@ -101,7 +101,7 @@ export default function App() {
     //   raised: false,
     //   resolution: 1,
     //   getFillColor: d => colorInterpDifference(d.properties.Difference[counter]),
-    //   resRange: [5, 5],
+    //   resRange: [4, 4],
     //   opacity: slide >= 2 ? 0.2 : 0,
     //   updateTriggers: {
     //     getFillColor: [counter],
@@ -120,14 +120,14 @@ export default function App() {
     // }),
     new SolidHexTileLayer({
       id: `GroundwaterLayer`,
-      data, 
+      data,
       thicknessRange: [0.65, 0.80],
       filled: true,
       resolution: 1,
       extruded: false,
       raised: false,
       getFillColor: d => colorInterpGW(d.properties.Groundwater[slide <= 2 ? counter : (slide <= 4 ? 1026 : 1197)]),
-      resRange: [5, 5],
+      resRange: [4, 4],
       visible: slide >= 1,
       opacity: slide >= 2 ? 0.8 : 0,
       transitions: {
@@ -137,39 +137,57 @@ export default function App() {
     }),
     new IconHexTileLayer({
       id: `DemandIcons`,
-      data, 
+      data,
       loaders: [OBJLoader],
       mesh: './src/assets/drop.obj',
       raised: true,
       extruded: false,
       resolution: 1,
       getColor: d => [255, 158, 102],
-      getValue: d => valueInterpDemand(d.properties.DemandBaseline[counter]),
+      getValue: slide == 1 ? d => valueInterpDemand(d.properties.DemandBaseline[counter]) : d => valueInterpUnmet(d.properties.UnmetDemandBaseline[counter]),
       sizeScale: 3000,
-      resRange: [5, 5],
-      visible: slide == 1,
+      resRange: [4, 4],
+      visible: slide == 1 || slide == 7,
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
     }),
     new AnimatedIconHexTileLayer({
-      id: `UnmetDemandIcons`,
-      data, 
+      id: `UnmetDemandIcons1`,
+      data,
       loaders: [OBJLoader],
       mesh: './src/assets/drop.obj',
       raised: true,
       extruded: false,
       resolution: 1,
       getColor: d => [255, 158, 102],
-      getValue: slide <= 2 ? 0 : (slide <= 3 ? d => valueInterpDemand(d.properties.DemandBaseline[1026]) : (
-        slide <= 4 ? d => valueInterpUnmet(d.properties.UnmetDemand[1026]) : (
-          slide <= 5 ? d => valueInterpDemand(d.properties.DemandBaseline[1197]) : d => valueInterpUnmet(d.properties.UnmetDemand[1197])
-        )
-      )),
+      getValue: slide == 2 || slide == 5 ? d => 0 : (
+        slide == 3 ? d => valueInterpDemand(d.properties.DemandBaseline[1026]) : d => valueInterpUnmet(d.properties.UnmetDemandBaseline[1026])
+      ),
       sizeScale: 3000,
-      resRange: [5, 5],
-      visible: slide >= 2,
+      resRange: [4, 4],
+      visible: inRange(slide, 2, 5),
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `UnmetDemandIcons2`,
+      data,
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: 1,
+      getColor: d => [255, 158, 102],
+      getValue: slide == 4 || slide == 7 ? d => 0 : (
+        slide == 5 ? d => valueInterpDemand(d.properties.DemandBaseline[1197]) : d => valueInterpUnmet(d.properties.UnmetDemandBaseline[1197])
+      ),
+      sizeScale: 3000,
+      resRange: [4, 4],
+      visible: inRange(slide, 4, 7),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
@@ -188,7 +206,7 @@ export default function App() {
         <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
       </DeckGL>
       <Card {...{ slide }} />
-      { slide >= 1 && <Clock counter={ slide <= 2 ? counter : (slide <= 4 ? 1026 : 1197) }/> }
+      {slide >= 1 && <Clock counter={inRange(slide, 3, 6) ? (slide <= 4 ? 1026 : 1197) : counter} displayMonth={ inRange(slide, 3, 6) } />}
       <button onClick={() => {
         setSlide(s => s + 1)
       }} style={{

@@ -4,9 +4,9 @@ import math
 from PIL import Image
 
 # Opening JSON file
-with open("groundwater_hex_high_norm.json") as water_file, \
-    open("diff_unmet_hex_high_norm.json") as difference_scenario_file, \
-    open("landuse_hex_high_norm.json") as landuse_file:
+with open("groundwater_hex_norm_6.json") as water_file, \
+    open("diff_unmet_hex_norm_6.json") as difference_scenario_file, \
+    open("landuse_hex_norm_6.json") as landuse_file:
  
     # Reading from json file
     water_object = ujson.load(water_file)
@@ -20,6 +20,7 @@ with open("groundwater_hex_high_norm.json") as water_file, \
 
             for hexId in water_res:
                 if hexId in diff_scen_res:
+                    water_res[hexId]["UnmetDemandBaseline"] = diff_scen_res[hexId]["UnmetDemandBaseline"]
                     water_res[hexId]["UnmetDemand"] = diff_scen_res[hexId]["UnmetDemand"]
                     water_res[hexId]["Difference"] = diff_scen_res[hexId]["Difference"]
                     water_res[hexId]["DemandBaseline"] = diff_scen_res[hexId]["DemandBaseline"]
@@ -28,5 +29,5 @@ with open("groundwater_hex_high_norm.json") as water_file, \
                     water_res[hexId]["LandUse"] = landuse_res[hexId]["LandUse"]
     
     
-    with open("combine_hex_high_norm.json", "w") as outfile:
+    with open("combine_hex_norm_6.json", "w") as outfile:
         ujson.dump(water_object, outfile)

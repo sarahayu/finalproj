@@ -79,6 +79,7 @@ def avgGroundwater(arrObjs):
     }
 def avgDiffUnmet(arrObjs):
     return {
+        "UnmetDemandBaseline": avgArrOfArr([ obj["UnmetDemandBaseline"] for obj in arrObjs]),
         "UnmetDemand": avgArrOfArr([ obj["UnmetDemand"] for obj in arrObjs]),
         "Difference": avgArrOfArr([ obj["Difference"] for obj in arrObjs]),
         "DemandBaseline": avgArrOfArr([ obj["DemandBaseline"] for obj in arrObjs]),
@@ -330,10 +331,12 @@ def geojsonToHexPoints(dataFeatures, avgFn, resRange):
  
 # Opening JSON file
 with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes/demand_units") as region_file, \
-    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/unmetdemand") as temporal_file, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/unmetdemand") as temporal_file_bl, \
+    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/unmetdemand") as temporal_file, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/demand") as temporal_file_dem_bl, \
-    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/demand") as temporal_file_dem:
+    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/demand") as temporal_file_dem, \
+    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/supply") as temporal_file_supply_bl, \
+    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/supply") as temporal_file_supply:
  
     # Reading from json file
     region_object = ujson.load(region_file)
@@ -341,9 +344,25 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
     temporal_bl_object = ujson.load(temporal_file_bl)
     temporal_dem_object = ujson.load(temporal_file_dem)
     temporal_dem_bl_object = ujson.load(temporal_file_dem_bl)
+    temporal_supply_bl_object = ujson.load(temporal_file_supply_bl)
+    temporal_supply_object = ujson.load(temporal_file_supply)
 
     new_fs = [f for f in region_object["features"] if f["properties"]["DU_ID"] and f["properties"]["DU_ID"] in temporal_object and f["properties"]["DU_ID"] in temporal_dem_object]
     
+    for idd in temporal_dem_object:
+        temporal_object[idd] = list(temporal_object[idd].values())
+        temporal_bl_object[idd] = list(temporal_bl_object[idd].values())
+        temporal_dem_object[idd] = list(temporal_dem_object[idd].values())
+        temporal_dem_bl_object[idd] = list(temporal_dem_bl_object[idd].values())
+        temporal_supply_bl_object[idd] = list(temporal_supply_bl_object[idd].values())
+        temporal_supply_object[idd] = list(temporal_supply_object[idd].values())
+
+        if temporal_dem_object[idd][0] is None or temporal_dem_object[idd][0] < 0:
+            temporal_object[idd] = [0] * len(temporal_object[idd])
+            temporal_bl_object[idd] = [0] * len(temporal_bl_object[idd])
+            temporal_dem_object[idd] = [0] * len(temporal_dem_object[idd])
+            temporal_dem_bl_object[idd] = [0] * len(temporal_dem_bl_object[idd])
+
     tot_areas = {}
     
     for f in new_fs:
@@ -354,55 +373,32 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
 
         tot_areas[idd] += area.area(f["geometry"]) / 6e8
 
-    for idd in temporal_dem_object:
-        if temporal_dem_object[idd]["0"] is None:
-            for i in temporal_dem_object[idd]:
-                temporal_dem_object[idd][i] = 0
-    for idd in temporal_dem_bl_object:
-        if temporal_dem_bl_object[idd]["0"] is None:
-            for i in temporal_dem_bl_object[idd]:
-                temporal_dem_bl_object[idd][i] = 0
-
 
     for f in new_fs:
         idd = f["properties"]["DU_ID"]
         rea = tot_areas[idd]
-        f["properties"]["UnmetDemand"] = [(temporal_object[idd][i]) / rea for i in temporal_object[idd]]
-        f["properties"]["Difference"] = [(temporal_object[idd][i] - temporal_bl_object[idd][i]) / rea for i in temporal_object[idd]]
-        f["properties"]["DemandBaseline"] = [(temporal_dem_bl_object[idd][i]) / rea for i in temporal_dem_object[idd]]
-        f["properties"]["DemandDifference"] = [(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i]) / rea for i in temporal_dem_object[idd]]
+        f["properties"]["UnmetDemandBaseline"] = [(temporal_bl_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
+        f["properties"]["UnmetDemand"] = [(temporal_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
+        f["properties"]["Difference"] = [(temporal_object[idd][i] - temporal_bl_object[idd][i]) / rea for i in range(len(temporal_object[idd]))]
+        f["properties"]["DemandBaseline"] = [(temporal_dem_bl_object[idd][i]) / rea for i in range(len(temporal_dem_object[idd]))]
+        f["properties"]["DemandDifference"] = [(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i]) / rea for i in range(len(temporal_dem_object[idd]))]
 
     region_object["features"] = new_fs
 
         
-    with open("diff_unmet_hex_high_norm.json", "w") as outfile:
+    with open("diff_unmet_hex_norm_6.json", "w") as outfile:
 
         hex_object = geojsonToHexPoints(region_object["features"], avgDiffUnmet, [6, 6])
 
         ujson.dump(hex_object, outfile)
 
 # Opening JSON file
-with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes/demand_units") as region_file, \
-    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/unmetdemand") as temporal_file, \
-    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/unmetdemand") as temporal_file_bl:
+with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes/demand_units") as region_file:
  
     # Reading from json file
     region_object = ujson.load(region_file)
-    temporal_object = ujson.load(temporal_file)
-    temporal_bl_object = ujson.load(temporal_file_bl)
 
     new_fs = [f for f in region_object["features"] if f["properties"]["DU_ID"]]
-    
-    tot_areas = {}
-    
-    for f in new_fs:
-        idd = f["properties"]["DU_ID"]
-
-        if idd not in tot_areas:
-            tot_areas[idd] = 0
-
-        tot_areas[idd] += area.area(f["geometry"]) / 6e8
-
 
     for f in new_fs:
         idd = f["properties"]["DU_ID"]
@@ -411,7 +407,7 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
     region_object["features"] = new_fs
 
         
-    with open("landuse_hex_high_norm.json", "w") as outfile:
+    with open("landuse_hex_norm_6.json", "w") as outfile:
 
         hex_object = geojsonToHexPoints(region_object["features"], aggLandUse, [6, 6])
 
@@ -424,7 +420,7 @@ with open("baseline_groundwater.json") as region_file:
     region_object = ujson.load(region_file)
 
         
-    with open("groundwater_hex_high_norm.json", "w") as outfile:
+    with open("groundwater_hex_norm_6.json", "w") as outfile:
 
         hex_object = geojsonToHexPoints(region_object["features"], avgGroundwater, [6, 6])
 

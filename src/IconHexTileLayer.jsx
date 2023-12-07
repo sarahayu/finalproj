@@ -56,7 +56,7 @@ export default class IconHexTileLayer extends CompositeLayer {
 
         let [ddx, ddy] = this.props.offset
         data.push({
-          position: [x + dx * edgeLen + ddx * edgeLen, y + dy * edgeLen + ddy * edgeLen, this.props.getElevation({ properties }) + dz * 5000],
+          position: [x + dx * edgeLen + ddx * edgeLen, y + dy * edgeLen + ddy * edgeLen, this.props.getElevation({ properties }) + dz * 10000],
           properties,
         })
       }
