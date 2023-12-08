@@ -10,7 +10,7 @@ import { Map } from 'react-map-gl'
 
 import maplibregl from 'maplibre-gl'
 
-import _data from './assets/combine_hex_5_6_100.json'
+// import data from './assets/combine_hex_5_6_100.json'
 import mapStyle from './assets/style.json'
 import IconHexTileLayer from './IconHexTileLayer'
 import SolidHexTileLayer from './SolidHexTileLayer'
@@ -23,7 +23,9 @@ import Card from './Card'
 import Clock from './Clock'
 import { dataFilter, extent2D, saturate } from './utils/utils'
 
-let data = dataFilter(_data, d => d.DemandBaseline, ["4"])
+
+let _data = await (await fetch("./src/assets/combine_hex_5_6_100.json")).json()
+let data = dataFilter(_data, d => d.DemandBaseline)
 
 const a = d3.scaleLinear().domain(d3.extent(Object.values(Object.values(data).slice(-1)[0]).map(d => d["UnmetDemandBaselineAverage"]))).range([1, 0])
 const b = d3.scaleLinear().domain(d3.extent(Object.values(Object.values(data).slice(-1)[0]).map(d => d["DemandBaselineAverage"]))).range([0, 1])

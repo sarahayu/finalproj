@@ -22,7 +22,7 @@ const TEXT = {
     18: `What about another alternate scenario, Scenario 2? We can see that this scenario favors less equal distribution of unmet demand at the tradeoff of keeping levels closer to baseline historical level.`,
     19: `Scenario 3 is somewhere in between.`,
     20: `Here’s a timestep with more dramatic differences between scenarios, July 2021.`,
-    21: `As you may have noticed, rarely is there a situation where everyone wins. Tradeoffs must be made between regions, if not between months, and who and when to save water. With climate change and increasing population in the Central Valley, these choices become all the more pertinent. Which scenario is best? That choice is up to <b>you</b>. `,
+    21: `As you may have noticed, rarely is there a situation where everyone wins. Tradeoffs must be made between regions, if not between months, and who and when to save water. With climate change and increasing population in the Central Valley, these choices become all the more pertinent. Which scenario is best? That choice is up to <b>you</b>.<br/><i>Data from James Gilbert (NOAA)</i>`,
 }
 
 const TEXT_LEN = Object.values(TEXT).length

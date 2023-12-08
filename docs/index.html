@@ -3,8 +3,9 @@
 
 <head>
   <meta charset="utf-8">
-  <title>California Water</title>
+  <title>California Water Visualizer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet' />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +38,7 @@
       display: block;
       z-index: 0;
       position: absolute;
-      bottom: 10%;
+      bottom: 20%;
       left: 0px;
       width: max-content;
       max-width: 40%;
@@ -63,8 +64,64 @@
       opacity: 0.7;
       border-radius: 0 100vw 100vw 0;
     }
+
+    .buttons {
+      position: absolute;
+      display: block;
+      bottom: 20px;
+      padding: 1em;
+      border: none;
+      font-weight: bold;
+      background: white;
+      cursor: pointer;
+      opacity: 0.7;
+      font-size: 1.2rem;
+    }
+
+    .buttons.right {
+      right: 0px;
+      padding-right: 2em;
+      border-radius: 100vh 0 0 100vh;
+      transform: translateX(10px);
+    }
+
+    .buttons.right:hover {
+      transform: translateX(0px);
+    }
+
+    .buttons.left {
+      left: 0px;
+      padding-left: 2em;
+      border-radius: 0 100vh 100vh 0;
+      transform: translateX(-10px);
+    }
+
+    .buttons.left:hover {
+      transform: translateX(0px);
+    }
+
+    h1 {
+      position: absolute;
+      top: 0.5em;
+      right: 50%;
+      transform: translateX(50%);
+    }
+
+    .purple, .orange, .green {
+      font-weight: bold;
+    }
+
+    .purple {
+      color: rgb(174, 0, 255);
+    }
+    .orange {
+      color: rgb(255, 158, 102);
+    }
+    .green {
+      color: rgb(72, 235, 94);
+    }
   </style>
-  <script type="module" crossorigin src="./assets/index-da4b6706.js"></script>
+  <script type="module" crossorigin src="./assets/index-91ea452e.js"></script>
 </head>
 
 <body>
