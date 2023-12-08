@@ -10,27 +10,36 @@ import { Map } from 'react-map-gl'
 
 import maplibregl from 'maplibre-gl'
 
-import _data from './assets/combine_hex_5_6.json'
+import _data from './assets/combine_hex_5_6_100.json'
 import mapStyle from './assets/style.json'
 import IconHexTileLayer from './IconHexTileLayer'
 import SolidHexTileLayer from './SolidHexTileLayer'
 
-import { colorInterpDifference, valueInterpUnmet, valueInterpDemand, colorInterpGW, resScale, colorInterpDemand, colorInterpUnmet } from './utils/scales'
-import { AMBIENT_LIGHT, COWS_VIEW_STATE, DIR_LIGHT, INITIAL_VIEW_STATE, inRange, OUT_COW_VIEW_STATE, SETT_VIEW_STATE } from './utils/settings'
+import { colorInterpDifference, valueInterpUnmet, valueInterpDemand, colorInterpGW, resScale, dateInterpIdx, /* colorInterpDemand, colorInterpUnmet */ } from './utils/scales'
+import { AMBIENT_LIGHT, COWS_VIEW_STATE, DIR_LIGHT, INITIAL_VIEW_STATE, inRange, COWS_OUT_VIEW_STATE, PROJ_VIEW_STATE, SETT_VIEW_STATE, PROJ_OUT_VIEW_STATE, HOLDERS, SCENARIOS, SCENARIO_LABELS, JUXTAPOSE_VIEW_STATE } from './utils/settings'
 import { BitmapLayer } from 'deck.gl'
 import AnimatedIconHexTileLayer from './AnimatedIconHexTileLayer'
 import Card from './Card'
 import Clock from './Clock'
+import { dataFilter, extent2D, saturate } from './utils/utils'
 
-let data = _data.map(reses => {
-  let newReses = {}
-  for (let hexId in reses) {
-    if (reses[hexId].DemandBaseline)
-      newReses[hexId] = reses[hexId]
-  }
-  return newReses
-})
+let data = dataFilter(_data, d => d.DemandBaseline, ["4"])
 
+const a = d3.scaleLinear().domain(d3.extent(Object.values(Object.values(data).slice(-1)[0]).map(d => d["UnmetDemandBaselineAverage"]))).range([1, 0])
+const b = d3.scaleLinear().domain(d3.extent(Object.values(Object.values(data).slice(-1)[0]).map(d => d["DemandBaselineAverage"]))).range([0, 1])
+const c = d3.scaleLinear().domain(d3.extent(Object.values(Object.values(data).slice(-1)[0]).map(d => d["DemandBaselineAverage"] + d["UnmetDemandBaselineAverage"]))).range([0, 1])
+
+export const colorInterpUnmet = (unmetDemand) => saturate(d3.interpolatePurples(
+  a(unmetDemand)
+).replace(/[^\d,]/g, '').split(',').map(d => Number(d)))
+
+export const colorInterpDemand = (demand) => d3.interpolate((d3.interpolateOranges(
+  b(demand)
+)), "white")(0.5).replace(/[^\d,]/g, '').split(',').map(d => Number(d))
+
+export const colorInterpDiffDemand = (demand) => saturate(d3.interpolateBlues(
+  c(demand)
+).replace(/[^\d,]/g, '').split(',').map(d => Number(d)))
 
 export default function App() {
 
@@ -41,41 +50,180 @@ export default function App() {
     return [lightingEffect]
   })
   const [counter, setCounter] = useState(1026)
+  const [cycler, setCycler] = useState(0)
   const [curZoom, setCurZoom] = useState(1);
+  const [curScenario, setCurScenario] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const [counting, setCounting] = useState(false);
   const [initialViewState, setInitialViewState] = useState(INITIAL_VIEW_STATE);
 
-  
+  const [speedyCounter, setSpeedyCounter] = useState(1026)
+  const [playing, setPlaying] = useState(false);
+
+  const [displayGW, setDisplayGW] = useState(true)
+  const [displayDiff, setDisplayDiff] = useState(true)
+  const [displayUnmet, setDisplayUnmet] = useState(true)
+  const [displayDemand, setDisplayDemand] = useState(false)
+  const [displayLandUse, setDisplayLandUse] = useState(false)
+
+  useEffect(() => {
+    if (playing) {
+      let timer = setTimeout(() => setSpeedyCounter(c => (c + 1) % 1200), 250)
+      return function () {
+        clearTimeout(timer)
+      }
+
+    }
+  }, [speedyCounter, playing])
+
+  const getTooltip = useCallback(({ object }) => {
+    if (counting || inRange(slide, 1, 6) || slide == 14) {
+      let date = slide == 14 ? dateInterpIdx(1026) : (inRange(slide, 1, 2) ? dateInterpIdx(counter) : (inRange(slide, 3, 4) ? dateInterpIdx(1026) : dateInterpIdx(1197)))
+      let cc = slide == 14 ? 1026 : (inRange(slide, 1, 2) ? counter : (inRange(slide, 3, 4) ? 1026 : 1197))
+      return (
+        object && {
+          html: `\
+        <div><i>${date.toLocaleString('default', { month: 'long' })} ${date.toLocaleString('default', { year: 'numeric' })}</i></div>
+        <div><b>Demand</b></div>
+        <div>${object.properties.DemandBaseline[cc]}</div>
+        <div><b>Supply</b></div>
+        <div>${object.properties.DemandBaseline[cc] + object.properties.UnmetDemandBaseline[cc]}</div>
+        <div><b>Unmet Demand</b></div>
+        <div>${-object.properties.UnmetDemandBaseline[cc]}</div>
+        <div><b>Groundwater</b></div>
+        <div>${object.properties.Groundwater[cc]}</div>
+        <div><b>Land Holder</b></div>
+        <div>${HOLDERS[object.properties.LandUse[0]]}</div>
+    `
+        }
+      )
+    }
+    if (inRange(slide, 15, 1000)) {
+      let date = inRange(slide, 14, 19) ? dateInterpIdx(1026) : (inRange(slide, 20, 20) ? dateInterpIdx(1197) : (inRange(slide, 21, 21) ? dateInterpIdx((Math.floor(cycler / 3) * 67) % 1200) : dateInterpIdx(speedyCounter)))
+      let cc = inRange(slide, 14, 19) ? 1026 : (inRange(slide, 20, 20) ? 1197 : (inRange(slide, 21, 21) ? (Math.floor(cycler / 3) * 67) % 1200 : speedyCounter))
+      let cs = slide == 20 ? cycler % 3 : curScenario
+      return (
+        object && {
+          html: `\
+        <div><i>${date.toLocaleString('default', { month: 'long' })} ${date.toLocaleString('default', { year: 'numeric' })}</i></div>
+        <div><i>${SCENARIO_LABELS[cs]}</i></div>
+        <div><b>Demand</b></div>
+        <div>${object.properties.Demand[SCENARIOS[cs]][cc]}</div>
+        <div><b>Supply</b></div>
+        <div>${object.properties.Demand[SCENARIOS[cs]][cc] + object.properties.UnmetDemand[SCENARIOS[cs]][cc]}</div>
+        <div><b>Unmet Demand</b></div>
+        <div>${-object.properties.UnmetDemand[SCENARIOS[cs]][cc]}</div>
+        <div><b>Groundwater</b></div>
+        <div>${object.properties.Groundwater[cc]}</div>
+        <div><b>Land Holder</b></div>
+        <div>${HOLDERS[object.properties.LandUse[0]]}</div>
+    `
+        }
+      )
+    }
+
+    return (
+      object && {
+        html: `\
+        <div><b>Demand (Averaged Over 100 Years)</b></div>
+        <div>${object.properties.DemandBaselineAverage}</div>
+        <div><b>Supply (Averaged)</b></div>
+        <div>${object.properties.DemandBaselineAverage - object.properties.UnmetDemandBaselineAverage}</div>
+        <div><b>Unmet (Averaged)</b></div>
+        <div>${-object.properties.UnmetDemandBaselineAverage}</div>
+        <div><b>Groundwater (Averaged)</b></div>
+        <div>${object.properties.GroundwaterAverage}</div>
+        <div><b>Land Holder</b></div>
+        <div>${HOLDERS[object.properties.LandUse[0]]}</div>
+    `
+      }
+    )
+  }, [counter, slide, speedyCounter, cycler, curScenario])
+
+
   const zoomInCows = useCallback(() => {
-    setInitialViewState(COWS_VIEW_STATE)
+    setInitialViewState({ ...COWS_VIEW_STATE, onTransitionEnd: () => setTransitioning(false) })
   }, []);
 
   const zoomInSett = useCallback(() => {
-    setInitialViewState(SETT_VIEW_STATE)
+    setInitialViewState({ ...SETT_VIEW_STATE, onTransitionEnd: () => setTransitioning(false) })
   }, []);
 
-  const zoomOutCows = useCallback(() => {
-    setInitialViewState(Object.assign(OUT_COW_VIEW_STATE, { onTransitionEnd: zoomInSett }))
+  const zoomInProj = useCallback(() => {
+    setInitialViewState({ ...PROJ_VIEW_STATE, onTransitionEnd: () => setTransitioning(false) })
+  }, []);
+
+  const zoomInJux = useCallback(() => {
+    setInitialViewState({ ...JUXTAPOSE_VIEW_STATE, onTransitionEnd: () => setTransitioning(false) })
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setInitialViewState({ ...COWS_OUT_VIEW_STATE, onTransitionEnd: () => setTransitioning(false) })
+  }, []);
+
+  const zoomOutThenSett = useCallback(() => {
+    setTransitioning(true)
+    setInitialViewState({ ...PROJ_OUT_VIEW_STATE, onTransitionEnd: zoomInSett })
+  }, []);
+
+  const zoomOutThenProj = useCallback(() => {
+    setTransitioning(true)
+    setInitialViewState({ ...COWS_OUT_VIEW_STATE, onTransitionEnd: zoomInProj })
   }, []);
 
   useEffect(() => {
-    let timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 250)
-    return function () {
-      clearTimeout(timer)
-
+    if (inRange(slide, 1, 2)) {
+      setCounting(true)
+      let timer = setTimeout(() => setCounter(c => (c + 1) % 1200), 250)
+      return function () {
+        clearTimeout(timer)
+        setCounting(false)
+      }
     }
-  }, [counter])
+  }, [counter, slide])
 
-  
+  useEffect(() => {
+    if (inRange(slide, 20, 21)) {
+      let timer = setTimeout(() => setCycler(c => (c + 1) % 1000), 2000)
+      return function () {
+        clearTimeout(timer)
+      }
+    }
+  }, [cycler, slide])
+
+
   useEffect(() => {
     if (slide == 8) {
+      setTransitioning(true)
       zoomInCows()
     }
-    else if (slide == 8) {
-      zoomOutCows()
+    else if (slide == 10) {
+      zoomOutThenProj()
+    }
+    else if (slide == 11) {
+      zoomOutThenSett()
+    }
+    else if (slide == 12) {
+      setTransitioning(true)
+      zoomOut()
+    }
+    else if (slide == 17) {
+      setTransitioning(true)
+      zoomInJux()
+    }
+
+    if (inRange(slide, 15, 17)) {
+      setCurScenario(0)
+    } else if (slide == 18) {
+      setCurScenario(1)
+    } else if (slide == 19) {
+      setCurScenario(2)
     }
   }, [slide])
 
   const curRes = resScale(curZoom)
+
+  const epilogue = slide >= 22
 
   const layers = [
     new TileLayer({
@@ -110,40 +258,7 @@ export default function App() {
     //   },
     //   elevationData: `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`,
     //   texture: `https://services.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}.png`,
-    //   // operation: 'terrain+draw'
-    // }),
-    // new SolidHexTileLayer({
-    //   id: `DifferenceLayerHex`,
-    //   data: data.map(reses => {
-    //     let newReses = {}
-    //     for (let hexId in reses) {
-    //       if (reses[hexId].Difference)
-    //         newReses[hexId] = reses[hexId]
-    //     }
-    //     return newReses
-    //   }),
-    //   thicknessRange: [0.65, 0.8],
-    //   filled: true,
-    //   extruded: false,
-    //   raised: false,
-    //   resolution: 1,
-    //   getFillColor: d => colorInterpDifference(d.properties.Difference[counter]),
-    //   resRange: [5, 6],
-    //   opacity: slide >= 2 ? 0.2 : 0,
-    //   updateTriggers: {
-    //     getFillColor: [counter],
-    //   },
-    //   transitions: {
-    //     opacity: {
-    //       duration: 500,
-    //       // easing: d3.easeBackIn.overshoot(5),
-    //     },
-    //     getFillColor: {
-    //       duration: 500,
-    //       // easing: d3.easeBackIn.overshoot(5),
-    //     },
-    //   },
-    //   // extensions: [new TerrainExtension()]
+    //   operation: 'terrain+draw'
     // }),
     new SolidHexTileLayer({
       id: `GroundwaterLayer`,
@@ -154,12 +269,12 @@ export default function App() {
       extruded: false,
       raised: false,
       getFillColor: d => colorInterpGW(d.properties.Groundwater[slide <= 2 ? counter : (slide <= 4 ? 1026 : 1197)]),
-      resRange: [5, 6],
       visible: inRange(slide, 1, 6),
       opacity: slide >= 2 ? 0.8 : 0,
       transitions: {
         opacity: 250,
-      }
+      },
+      pickable: true,
       // extensions: [new TerrainExtension()]
     }),
     new IconHexTileLayer({
@@ -173,12 +288,12 @@ export default function App() {
       getColor: d => [255, 158, 102],
       getValue: d => valueInterpDemand(d.properties.DemandBaseline[counter]),
       sizeScale: 3000,
-      resRange: [5, 6],
       visible: slide == 1,
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
     }),
     new AnimatedIconHexTileLayer({
       id: `UnmetDemandIcons1`,
@@ -193,12 +308,12 @@ export default function App() {
         slide == 3 ? d => valueInterpDemand(d.properties.DemandBaseline[1026]) : d => valueInterpUnmet(d.properties.UnmetDemandBaseline[1026])
       ),
       sizeScale: 3000,
-      resRange: [5, 6],
       visible: inRange(slide, 2, 5),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
     }),
     new AnimatedIconHexTileLayer({
       id: `UnmetDemandIcons2`,
@@ -213,12 +328,12 @@ export default function App() {
         slide == 5 ? d => valueInterpDemand(d.properties.DemandBaseline[1197]) : d => valueInterpUnmet(d.properties.UnmetDemandBaseline[1197])
       ),
       sizeScale: 3000,
-      resRange: [5, 6],
       visible: inRange(slide, 4, 7),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
     }),
     new SolidHexTileLayer({
       id: `AverageDemand`,
@@ -226,16 +341,17 @@ export default function App() {
       thicknessRange: [0, 1],
       filled: true,
       resolution: curRes,
-      extruded: false,
+      extruded: true,
+      getElevation: d => !transitioning && ((inRange(slide, 9, 9) && d.properties.LandUse[0] == 1) || (inRange(slide, 10, 10) && d.properties.LandUse[0] == 2) || (inRange(slide, 11, 11) && d.properties.LandUse[0] == 0)) ? 1000 : 0,
       raised: false,
       getFillColor: d => colorInterpDemand(d.properties.DemandBaselineAverage),
-      resRange: [5, 6],
-      visible: inRange(slide, 6, 9),
+      visible: inRange(slide, 6, 11),
       opacity: slide >= 7 ? 0.8 : 0,
       transitions: {
         opacity: 250,
-      }
+      },
       // extensions: [new TerrainExtension()]
+      pickable: true,
     }),
     new SolidHexTileLayer({
       id: `AverageUnmetDemand`,
@@ -243,112 +359,372 @@ export default function App() {
       thicknessRange: [0.65, 0.80],
       filled: true,
       resolution: curRes,
-      extruded: false,
+      extruded: true,
+      getElevation: d => !transitioning && ((inRange(slide, 9, 9) && d.properties.LandUse[0] == 1) || (inRange(slide, 10, 10) && d.properties.LandUse[0] == 2) || (inRange(slide, 11, 11) && d.properties.LandUse[0] == 0)) ? 1000 : 0,
       raised: false,
       getFillColor: d => colorInterpUnmet(d.properties.UnmetDemandBaselineAverage),
-      resRange: [5, 6],
-      visible: inRange(slide, 6, 9),
+      visible: inRange(slide, 6, 11),
       opacity: slide >= 7 ? 0.8 : 0,
       transitions: {
         opacity: 250,
-      }
+      },
       // extensions: [new TerrainExtension()]
+      pickable: true,
     }),
     new IconHexTileLayer({
       id: `SettlementIconsLayer`,
-      data: data.map(reses => {
-          let newReses = {}
-          for (let hexId in reses) {
-            if (reses[hexId].LandUse && reses[hexId].LandUse[0] == 0)
-              newReses[hexId] = reses[hexId]
-          }
-          return newReses
-        }),
+      data: dataFilter(data, d => d.LandUse[0] == 0),
       loaders: [OBJLoader],
       mesh: './src/assets/dam.obj',
       raised: true,
-      extruded: false,
+      getElevation: d => !transitioning && inRange(slide, 11, 11) ? 1000 : 0,
       resolution: curRes,
       getColor: d => [200, 200, 200],
       sizeScale: 0.8 * 500,
-      resRange: [5, 6],
-      visible: inRange(slide, 9, 1000),
+      visible: inRange(slide, 9, 13),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
     }),
     new IconHexTileLayer({
       id: `ExhangeIconsLayer`,
-      data: data.map(reses => {
-          let newReses = {}
-          for (let hexId in reses) {
-            if (reses[hexId].LandUse && reses[hexId].LandUse[0] == 1)
-              newReses[hexId] = reses[hexId]
-          }
-          return newReses
-        }),
+      data: dataFilter(data, d => d.LandUse[0] == 1),
       loaders: [OBJLoader],
       mesh: './src/assets/cow.obj',
       raised: true,
-      extruded: false,
+      getElevation: d => !transitioning && inRange(slide, 9, 9) ? 1000 : 0,
       resolution: curRes,
       getColor: d => [200, 200, 200],
       sizeScale: 0.8 * 550,
-      resRange: [5, 6],
-      visible: inRange(slide, 9, 1000),
+      visible: inRange(slide, 9, 13),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
     }),
     new IconHexTileLayer({
       id: `ProjectIconsLayer`,
-      data: data.map(reses => {
-          let newReses = {}
-          for (let hexId in reses) {
-            if (reses[hexId].LandUse && reses[hexId].LandUse[0] == 2)
-              newReses[hexId] = reses[hexId]
-          }
-          return newReses
-        }),
+      data: dataFilter(data, d => d.LandUse[0] == 2),
       loaders: [OBJLoader],
       mesh: './src/assets/project.obj',
       raised: true,
-      extruded: false,
+      getElevation: d => !transitioning && inRange(slide, 10, 10) ? 1000 : 0,
       resolution: curRes,
       getColor: d => [200, 200, 200],
       sizeScale: 0.8 * 180,
-      resRange: [5, 6],
-      visible: inRange(slide, 9, 1000),
+      visible: inRange(slide, 9, 13),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
     }),
     new IconHexTileLayer({
       id: `NonProjectIconsLayer`,
-      data: data.map(reses => {
-          let newReses = {}
-          for (let hexId in reses) {
-            if (reses[hexId].LandUse && reses[hexId].LandUse[0] == 3)
-              newReses[hexId] = reses[hexId]
-          }
-          return newReses
-        }),
+      data: dataFilter(data, d => d.LandUse[0] == 3),
       loaders: [OBJLoader],
       mesh: './src/assets/nonproject.obj',
       raised: true,
-      extruded: false,
+      getElevation: d => 0,
       resolution: curRes,
       getColor: d => [200, 200, 200],
       sizeScale: 0.8 * 140,
-      resRange: [5, 6],
-      visible: inRange(slide, 9, 1000),
+      visible: inRange(slide, 9, 13),
       opacity: 1,
       // extensions: [new TerrainExtension({
       //   terrainDrawMode: 'offset'
       // })],
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `GroundwaterAgainLayer`,
+      data,
+      thicknessRange: [0, 1],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpGW(d.properties.GroundwaterAverage),
+      visible: inRange(slide, 12, 13),
+      opacity: inRange(slide, 13, 13) ? 0.5 : 0,
+      transitions: {
+        opacity: 250,
+      },
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `DeliveryWaterLayer`,
+      data,
+      thicknessRange: [0.85, 1],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpDiffDemand(d.properties.DemandBaselineAverage + d.properties.UnmetDemandBaselineAverage),
+      visible: inRange(slide, 11, 13),
+      opacity: inRange(slide, 12, 13) ? 0.5 : 0,
+      transitions: {
+        opacity: 250,
+      },
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `GroundwaterAgainTimed`,
+      data,
+      thicknessRange: [0, 1],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpGW(d.properties.Groundwater[inRange(slide, 13, 19) ? 1026 : (slide == 20 ? 1197 : (Math.floor(cycler / 3) * 67) % 1200)]),
+      visible: inRange(slide, 13, 21),
+      opacity: inRange(slide, 14, 21) ? 0.5 : 0,
+      transitions: {
+        opacity: 250,
+      },
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `ScenarioUnmet`,
+      data,
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: curRes,
+      getColor: d => [174, 0, 255],
+      getValue: slide == 13 ? d => 0 : (
+        slide == 14 ? d => valueInterpUnmet(d.properties.UnmetDemandBaseline[1026]) : d => valueInterpUnmet(d.properties.UnmetDemand[SCENARIOS[curScenario]][1026])
+      ),
+      sizeScale: 3000,
+      visible: inRange(slide, 13, 19),
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `DifferenceLayer`,
+      data,
+      thicknessRange: [0.65, 0.8],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpDifference(d.properties.UnmetDemand[SCENARIOS[curScenario]][1026] - d.properties.UnmetDemandBaseline[1026]),
+      visible: inRange(slide, 15, 19),
+      opacity: inRange(slide, 16, 19) ? 0.5 : 0,
+      transitions: {
+        opacity: 250,
+      },
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `ScenarioUnmet1197`,
+      data,
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: curRes,
+      getColor: d => [174, 0, 255],
+      getValue: d => valueInterpUnmet(d.properties.UnmetDemand[SCENARIOS[cycler % 3]][1197]),
+      sizeScale: 3000,
+      visible: inRange(slide, 20, 20),
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `DifferenceLayer1197`,
+      data,
+      thicknessRange: [0.65, 0.8],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpDifference(d.properties.UnmetDemand[SCENARIOS[cycler % 3]][1197] - d.properties.UnmetDemandBaseline[1197]),
+      visible: inRange(slide, 19, 20),
+      opacity: inRange(slide, 20, 20) ? 0.5 : 0,
+      transitions: {
+        opacity: 250,
+      },
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `ScenarioUnmetRandomized`,
+      data,
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: curRes,
+      getColor: d => [174, 0, 255],
+      getValue: d => valueInterpUnmet(d.properties.UnmetDemand[SCENARIOS[cycler % 3]][(Math.floor(cycler / 3) * 67) % 1200]),
+      sizeScale: 3000,
+      visible: inRange(slide, 21, 21),
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `DifferenceLayerRandomized`,
+      data,
+      thicknessRange: [0.65, 0.8],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpDifference(d.properties.UnmetDemand[SCENARIOS[cycler % 3]][(Math.floor(cycler / 3) * 67) % 1200] - d.properties.UnmetDemandBaseline[(Math.floor(cycler / 3) * 67) % 1200]),
+      visible: inRange(slide, 20, 21),
+      opacity: inRange(slide, 21, 21) ? 0.5 : 0,
+      transitions: {
+        opacity: 250,
+      },
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+
+    new SolidHexTileLayer({
+      id: `GroundwaterEpilogue`,
+      data,
+      thicknessRange: [0, 1],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpGW(d.properties.Groundwater[speedyCounter]),
+      visible: displayGW && epilogue,
+      opacity: 0.5,
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new SolidHexTileLayer({
+      id: `DifferenceEpilogue`,
+      data,
+      thicknessRange: [0.65, 0.8],
+      filled: true,
+      resolution: curRes,
+      extruded: false,
+      raised: false,
+      getFillColor: d => colorInterpDifference(d.properties.UnmetDemand[SCENARIOS[curScenario]][speedyCounter] - d.properties.UnmetDemandBaseline[speedyCounter]),
+      visible: displayDiff && epilogue,
+      opacity: 0.5,
+      // extensions: [new TerrainExtension()]
+      pickable: true,
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `ScenarioUnmetEpilogue`,
+      data,
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: curRes,
+      getColor: d => [174, 0, 255],
+      getValue: d => valueInterpUnmet(d.properties.UnmetDemand[SCENARIOS[curScenario]][speedyCounter]),
+      sizeScale: 3000,
+      visible: displayUnmet && epilogue,
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new AnimatedIconHexTileLayer({
+      id: `ScenarioDemandEpilogue`,
+      data,
+      loaders: [OBJLoader],
+      mesh: './src/assets/drop.obj',
+      raised: true,
+      extruded: false,
+      resolution: curRes,
+      getColor: d => [255, 158, 102],
+      getValue: d => valueInterpDemand(d.properties.Demand[SCENARIOS[curScenario]][speedyCounter]),
+      sizeScale: 3000,
+      visible: displayDemand && epilogue,
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new IconHexTileLayer({
+      id: `SettlementIconsEpilogue`,
+      data: dataFilter(data, d => d.LandUse[0] == 0),
+      loaders: [OBJLoader],
+      mesh: './src/assets/dam.obj',
+      raised: false,
+      resolution: curRes,
+      getColor: d => [200, 200, 200],
+      sizeScale: 0.8 * 500,
+      visible: displayLandUse && epilogue,
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new IconHexTileLayer({
+      id: `ExhangeIconsEpilogue`,
+      data: dataFilter(data, d => d.LandUse[0] == 1),
+      loaders: [OBJLoader],
+      mesh: './src/assets/cow.obj',
+      raised: false,
+      resolution: curRes,
+      getColor: d => [200, 200, 200],
+      sizeScale: 0.8 * 550,
+      visible: displayLandUse && epilogue,
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new IconHexTileLayer({
+      id: `ProjectIconsEpilogue`,
+      data: dataFilter(data, d => d.LandUse[0] == 2),
+      loaders: [OBJLoader],
+      mesh: './src/assets/project.obj',
+      raised: false,
+      resolution: curRes,
+      getColor: d => [200, 200, 200],
+      sizeScale: 0.8 * 180,
+      visible: displayLandUse && epilogue,
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
+    }),
+    new IconHexTileLayer({
+      id: `NonProjectIconsEpilogue`,
+      data: dataFilter(data, d => d.LandUse[0] == 3),
+      loaders: [OBJLoader],
+      mesh: './src/assets/nonproject.obj',
+      raised: false,
+      resolution: curRes,
+      getColor: d => [200, 200, 200],
+      sizeScale: 0.8 * 140,
+      visible: displayLandUse && epilogue,
+      opacity: 1,
+      // extensions: [new TerrainExtension({
+      //   terrainDrawMode: 'offset'
+      // })],
+      pickable: true,
     }),
   ]
 
@@ -363,21 +739,92 @@ export default function App() {
         effects={effects}
         initialViewState={initialViewState}
         controller={true}
+        getTooltip={getTooltip}
       >
         <Map reuseMaps mapLib={maplibregl} mapStyle={mapStyle} preventStyleDiffing={true} />
       </DeckGL>
-      <Card {...{ slide }} />
-      {inRange(slide, 1, 6) && <Clock counter={inRange(slide, 3, 6) ? (slide <= 4 ? 1026 : 1197) : counter} displayMonth={ inRange(slide, 3, 6) } dataset={ slide == 3 ? "averageDemandBaseline" : "averageDemandBaseline" } />}
-      <button onClick={() => {
+      <Card slide={slide} transitioning={transitioning} />
+      {(inRange(slide, 1, 6) || inRange(slide, 14, 1000)) && <Clock counter={(slide >= 14 ? (inRange(slide, 14, 19) ? 1026 : (slide == 20 ? 1197 : (slide == 21 ? (Math.floor(cycler / 3) * 67) % 1200 : (speedyCounter)))) : (inRange(slide, 3, 6) ? (slide <= 4 ? 1026 : 1197) : counter))} displayMonth={inRange(slide, 3, 6)} dataset={slide == 2 ? "averageGroundwater" : "averageDemandBaseline"} />}
+      {slide < 22 && <button onClick={() => {
         setSlide(s => s + 1)
-      }} style={{
-        position: 'absolute', display: 'block', bottom: "20px", right: "20px"
-      }}>Next Slide</button>
-      <button onClick={() => {
+      }} className="buttons right">{'\u27E9'}</button>}
+      {slide > 0 && <button onClick={() => {
         setSlide(s => s - 1)
-      }} style={{
-        position: 'absolute', display: 'block', bottom: "20px", left: "20px"
-      }}>Prev Slide</button>
+      }} className="buttons left">{'\u27E8'}</button>}
+      {inRange(slide, 15, 21) && <h1>
+        {SCENARIO_LABELS[inRange(slide, 20, 21) ? cycler % 3 : curScenario]}
+      </h1>}
+      {
+        epilogue &&
+        <button onClick={() => {
+          setPlaying(p => !p)
+        }} style={{
+          position: 'absolute', display: 'block', bottom: "20px", right: "50%", transform: "translateX(50%)"
+        }}>{playing ? "Pause" : "Play"}</button>
+      }
+      {
+        epilogue &&
+        <input onChange={function (e) {
+          setPlaying(false)
+          setSpeedyCounter(parseInt(e.target.value))
+        }} onInput={function (e) {
+          setSpeedyCounter(parseInt(e.target.value))
+        }} value={speedyCounter} style={{
+          width: '50vw',
+          position: 'absolute', display: 'block', bottom: "40px", right: "50%", transform: "translateX(50%)"
+        }} type="range" min="0" max="1199" id="myRange" />
+      }
+      {
+        epilogue &&
+        <div style={{
+          position: 'absolute', display: 'block', bottom: "20%", right: "0", transform: "translateY(50%)"
+        }}>
+          <div>
+            <input type="checkbox" value="display1" checked={displayGW} onChange={() => setDisplayGW(d => !d)} />
+            <label htmlFor="display1">Display Groundwater</label>
+          </div>
+          <div>
+            <input type="checkbox" value="display2" checked={displayDiff} onChange={() => setDisplayDiff(d => !d)} />
+            <label htmlFor="display2">Display Difference to Baseline</label>
+          </div>
+          <div>
+            <input type="checkbox" value="display3" checked={displayUnmet} onChange={() => setDisplayUnmet(d => !d)} />
+            <label htmlFor="display3">Display Unmet Demand</label>
+          </div>
+          <div>
+            <input type="checkbox" value="display4" checked={displayDemand} onChange={() => setDisplayDemand(d => !d)} />
+            <label htmlFor="display4">Display Demand</label>
+          </div>
+          <div>
+            <input type="checkbox" value="display5" checked={displayLandUse} onChange={() => setDisplayLandUse(d => !d)} />
+            <label htmlFor="display5">Display Land Use</label>
+          </div>
+        </div>
+      }
+      {
+        epilogue && 
+        <div onChange={function (e) {
+          setCurScenario(e.target.value)
+        }} style={{
+          position: 'absolute', display: 'block', bottom: "50%", right: "0", transform: "translateY(50%)"
+        }}>
+
+          <div>
+            <input type="radio" name="scenario" value="0" checked={curScenario == 0} />
+            <label htmlFor="scenario1">Scenario 1</label>
+          </div>
+
+          <div>
+            <input type="radio" name="scenario" value="1" checked={curScenario == 1} />
+            <label htmlFor="scenario2">Scenario 2</label>
+          </div>
+
+          <div>
+            <input type="radio" name="scenario" value="2" checked={curScenario == 2} />
+            <label htmlFor="scenario3">Scenario 3</label>
+          </div>
+        </div>
+      }
     </>
   )
 }

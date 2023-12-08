@@ -1,3 +1,5 @@
+import * as d3 from 'd3'
+
 
 function RGBtoHSV(color) {
     let r, g, b, h, s, v
@@ -93,6 +95,32 @@ export function saturate(col, times) {
     let rgb = HSVtoRGB(hsv)
 
     return rgb
+}
+
+export function dataFilter(data, cond, excludeRes) {
+    let newData = {}
+    if (!excludeRes) excludeRes = []
+
+    Object.keys(data).forEach(res => {
+        if (excludeRes.includes(res)) return
+        let hexes = data[res]
+        let newHexes = {}
+        Object.keys(hexes).forEach(hexId => {
+            if (cond(hexes[hexId]))
+                newHexes[hexId] = hexes[hexId]
+        })
+        newData[res] = newHexes
+    })
+    return newData
+}
+
+
+export function flatten(arr) {
+    return [].concat.apply([], arr)
+}
+
+export function extent2D(arrOfArr) {
+    return d3.extent(flatten(arrOfArr.map(arr => d3.extent(arr))))
 }
 
 

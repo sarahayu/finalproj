@@ -5,30 +5,38 @@ from PIL import Image
 
 MMIN = 5
 MMAX = 6
+RES = 100
 ATTRS = [
     "UnmetDemandBaseline",
-    "UnmetDemand",
-    "Difference",
     "DemandBaseline",
+    # "Difference",
     # "DemandDifference",
-    # "SupplyBaseline",
-    # "Supply",
+# ]
+# SCEN_ATTRS = [
+    "UnmetDemand",
+    "Demand",
+]
+SCENS = [
+    "bl_h000",
+    "CS3_ALT3_2022med_L2020ADV",
+    "LTO_BA_EXP1_2022MED",
 ]
 
 # Opening JSON file
-with open(f"groundwater_hex_{MMIN}_{MMAX}.json") as water_file, \
-    open(f"diff_unmet_hex_{MMIN}_{MMAX}.json") as difference_scenario_file, \
-    open(f"landuse_hex_{MMIN}_{MMAX}.json") as landuse_file:
+with open(f"groundwater_hex_{MMIN}_{MMAX}_{RES}.json") as water_file, \
+    open(f"diff_unmet_hex_{MMIN}_{MMAX}_{RES}.json") as difference_scenario_file, \
+    open(f"landuse_hex_{MMIN}_{MMAX}_{RES}.json") as landuse_file:
  
     # Reading from json file
     water_object = ujson.load(water_file)
     difference_scenario_object = ujson.load(difference_scenario_file)
     landuse_object = ujson.load(landuse_file)
 
-    for i, water_res in enumerate(water_object):
-        if i < len(difference_scenario_object):
-            diff_scen_res = difference_scenario_object[i]
-            landuse_res = landuse_object[i]
+    for res in water_object:
+        water_res = water_object[res]
+        if res in difference_scenario_object and res in landuse_object:
+            diff_scen_res = difference_scenario_object[res]
+            landuse_res = landuse_object[res]
 
             for hexId in water_res:
                 if hexId in diff_scen_res:
@@ -39,5 +47,5 @@ with open(f"groundwater_hex_{MMIN}_{MMAX}.json") as water_file, \
                     water_res[hexId]["LandUse"] = landuse_res[hexId]["LandUse"]
     
     
-    with open(f"combine_hex_{MMIN}_{MMAX}.json", "w") as outfile:
+    with open(f"combine_hex_{MMIN}_{MMAX}_{RES}.json", "w") as outfile:
         ujson.dump(water_object, outfile)

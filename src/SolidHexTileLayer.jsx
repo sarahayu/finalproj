@@ -41,23 +41,24 @@ export default class SolidHexTileLayer extends CompositeLayer {
   initializeState() {
     super.initializeState();
     this.setState({
-      hextiles: this.props.data //geojsonToHexPoints(this.props.data.features, this.props.averageFn, this.props.resRange),
+      hextiles: this.props.data, //geojsonToHexPoints(this.props.data.features, this.props.averageFn, this.props.resRange),
+      resRange: Object.keys(this.props.data).map(d => parseInt(d)),
     })
   }
 
   renderLayers() {
 
-    const { hextiles } = this.state
+    const { hextiles, resRange } = this.state
 
     if (!hextiles) return
 
     let polygons = []
-    let resIdx = d3.scaleQuantize()
+    let curRes = d3.scaleQuantize()
       .domain([0, 1])
-      .range(d3.range(0, hextiles.length))(this.props.resolution)
+      .range(resRange)(this.props.resolution)
 
-    console.log(hextiles.length)
-    let resHex = hextiles[resIdx]
+    // console.log(hextiles.length)
+    let resHex = hextiles[curRes]
 
     Object.keys(resHex).forEach(hexId => {
 

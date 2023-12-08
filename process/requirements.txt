@@ -1,0 +1,10 @@
+area==1.1.1
+h3==4.0.0b2
+importlib-metadata==7.0.0
+llvmlite==0.41.1
+numba==0.58.1
+numpy==1.24.4
+Pillow==10.1.0
+shapely==2.0.2
+ujson==5.8.0
+zipp==3.17.0

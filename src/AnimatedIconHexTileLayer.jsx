@@ -11,12 +11,11 @@ const formationInterp = d3.scaleQuantize()
 
 export default class AnimatedIconHexTileLayer extends CompositeLayer {
 
-
-
     initializeState() {
         super.initializeState();
         this.setState({
             hextiles: this.props.data,
+            resRange: Object.keys(this.props.data).map(d => parseInt(d)),
             transitioning: false,
             prevGetValueFn: null,
         })
@@ -24,7 +23,7 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
 
     renderLayers() {
         if (!this.props.visible) return
-        let { hextiles, transitioning, prevGetValueFn } = this.state
+        let { hextiles, transitioning, prevGetValueFn, resRange } = this.state
 
         if (prevGetValueFn === null) {
             this.setState(Object.assign(this.state, {
@@ -53,16 +52,13 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
         let data = []
         console.log("in rest of draw")
 
-        let resIdx = d3.scaleQuantize()
-            .domain([0, 1])
-            .range(d3.range(0, hextiles.length))(this.props.resolution)
         let curRes = d3.scaleQuantize()
             .domain([0, 1])
-            .range(d3.range(this.props.resRange[0], this.props.resRange[1] + 1))(this.props.resolution)
+            .range(resRange)(this.props.resolution)
 
         // console.log(resIdx)
 
-        let resHex = hextiles[resIdx]
+        let resHex = hextiles[curRes]
         const edgeLen = h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) / 250 * 1.75
         let iconScale = h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) / h3.getHexagonEdgeLengthAvg(5, h3.UNITS.km)
 
@@ -75,7 +71,7 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
 
             const id = this.props.getValue ? formationInterp(this.props.getValue({ properties })) : 1
 
-            for (let [dx, dy, dz] of this.props.getValue ? (transitioning ? INTERIM_FORMATIONS[formationInterp(prevGetValueFn({ properties }))][id] : FORMATIONS[id]) : FORMATIONS[1]) {
+            for (let [dx, dy, dz] of this.props.getValue ? (transitioning ? INTERIM_FORMATIONS[formationInterp(prevGetValueFn({ properties }))][id] : FORMATIONS[id]) : [[0, 0, 0]]) {
 
                 let [ddx, ddy] = this.props.offset
                 data.push({
@@ -130,7 +126,6 @@ AnimatedIconHexTileLayer.defaultProps = {
     ...SimpleMeshLayer.defaultProps,
     thicknessRange: [0.7, 0.9],
     resolution: 0,
-    resRange: [5, 5],
     getValue: undefined,
     getElevation: () => 0,
     offset: [0, 0],

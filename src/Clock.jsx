@@ -23,6 +23,8 @@ export default function Clock({ counter, displayMonth, dataset }) {
         .angle((_, i) => monthScale((((i) % 12) + 1)))
         
     useEffect(() => {
+        d3.select("#clockContainer").style("visibility", "visible")
+
         d3.select("#pieOutline path")
             .attr("d", d3.arc()
                 .innerRadius(40)
@@ -30,23 +32,24 @@ export default function Clock({ counter, displayMonth, dataset }) {
                 .startAngle(0)
                 .endAngle(Math.PI * 2))
             .attr("fill", "none")
-            .attr("stroke", "rgba(255, 205, 178, 1)")
+            .attr("stroke", dataset == "averageGroundwater" ? "rgb(200, 200, 200)" : "rgba(255, 205, 178, 1)")
         d3.select("#demandLine path")
             .data([averageData[dataset]])
             .join("path")
             .attr("d", avgs => radial(avgs))
-            .attr("stroke", "rgba(178, 108, 71, 0.3)")
+            .attr("stroke", dataset == "averageGroundwater" ? "rgba(150, 150, 150, 0.3)" : "rgba(178, 108, 71, 0.3)")
             .attr("stroke-width", "0.2")
             .attr("fill", "none")
 
         return function() {
+            d3.select("#clockContainer").style("visibility", "hidden")
             d3.select("#pie path").attr("d", "")
             d3.select("#pieOutline path").attr("d", "")
             d3.select("#demandLine path").attr("d", "")
             d3.select("#demandLineCur path").attr("d", "")
             d3.select("#date").text("")
         }
-    }, [])
+    }, [dataset])
     useEffect(() => {
         d3.select("#pie path")
             .attr("d", d3.arc()
@@ -54,17 +57,17 @@ export default function Clock({ counter, displayMonth, dataset }) {
                 .outerRadius(90)
                 .startAngle(0)
                 .endAngle(Math.PI * monthIdx / 12 * 2))
-            .attr("fill", "rgba(255, 205, 178, 1)")
+            .attr("fill", dataset == "averageGroundwater" ? "rgb(200, 200, 200)" : "rgba(255, 205, 178, 1)")
         let date = dateInterpIdx(counter)
         if (displayMonth)
-            d3.select("#date").html(date.toLocaleString('default', { year: 'numeric' }) + "<br/>" + date.toLocaleString('default', { month: 'long' }))
+            d3.select("#date").html("<b>" + date.toLocaleString('default', { year: 'numeric' }) + "</b><br/>" + date.toLocaleString('default', { month: 'long' }))
         else
-            d3.select("#date").html(date.toLocaleString('default', { year: 'numeric' }))
+            d3.select("#date").html("<b>" + date.toLocaleString('default', { year: 'numeric' }) + "</b>")
         d3.selectAll("#demandLineCur path")
             .data([averageData[dataset].filter((_, i) => dateInterpIdx(i).toLocaleString('default', { year: 'numeric' }) == date.toLocaleString('default', { year: 'numeric' }))])
             .join("path")
             .attr("d", avgs => radialMonth(avgs))
-            .attr("stroke", "rgb(178, 108, 71)")
+            .attr("stroke", dataset == "averageGroundwater" ? "rgba(150, 150, 150, 1)" : "rgba(178, 108, 71, 1)")
             .attr("stroke-width", "2")
             .attr("fill", "none")
 

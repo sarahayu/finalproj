@@ -14,27 +14,25 @@ export default class IconHexTileLayer extends CompositeLayer {
     super.initializeState();
     this.setState({
       hextiles: this.props.data,
+      resRange: Object.keys(this.props.data).map(d => parseInt(d)),
     })
   }
 
   renderLayers() {
 
-    const { hextiles } = this.state
+    const { hextiles, resRange } = this.state
 
     if (!hextiles) return
 
     let data = []
 
-    let resIdx = d3.scaleQuantize()
-      .domain([0, 1])
-      .range(d3.range(0, hextiles.length))(this.props.resolution)
     let curRes = d3.scaleQuantize()
       .domain([0, 1])
-      .range(d3.range(this.props.resRange[0], this.props.resRange[1] + 1))(this.props.resolution)
+      .range(resRange)(this.props.resolution)
     
     // console.log(resIdx)
 
-    let resHex = hextiles[resIdx]
+    let resHex = hextiles[curRes]
     const edgeLen = h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) / 250 * 1.75
     let iconScale = h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) / h3.getHexagonEdgeLengthAvg(5, h3.UNITS.km)
 
@@ -52,7 +50,7 @@ export default class IconHexTileLayer extends CompositeLayer {
       //   return
       // }
 
-      for (let [dx, dy, dz] of FORMATIONS[id]) {
+      for (let [dx, dy, dz] of this.props.getValue ? FORMATIONS[id] : [[0, 0, 0]]) {
 
         let [ddx, ddy] = this.props.offset
         data.push({

@@ -26,7 +26,8 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/demand") as temporal_file_dem_bl, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/demand") as temporal_file_dem, \
     urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/supply") as temporal_file_supply_bl, \
-    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/supply") as temporal_file_supply:
+    urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/bl_h000/supply") as temporal_file_supply, \
+    open("baseline_groundwater.json") as gw_region_file:
  
     # Reading from json file
     region_object = ujson.load(region_file)
@@ -84,21 +85,25 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
             avgsDemandDifference[i].add_to_avg(temporal_dem_object[idd][i] - temporal_dem_bl_object[idd][i], rea)
             avgsSupplyBaseline[i].add_to_avg(temporal_supply_bl_object[idd][i], rea)
             avgsSupply[i].add_to_avg(temporal_supply_object[idd][i], rea)
-
     
-    # with open("baseline_groundwater.json") as region_file:
+    # Reading from json file
+    gw_region_object = ujson.load(gw_region_file)
+        
+    new_fs = gw_region_object["features"]
+
+    tot_areas = {}
     
-    #     # Reading from json file
-    #     region_object = ujson.load(region_file)
-
-            
-    #     new_fs = [f for f in region_object["features"] if f["properties"]["DU_ID"]]
-
-    #     with open(f"groundwater_hex_{MMIN}_{MMAX}.json", "w") as outfile:
-
-    #         hex_object = geojsonToHexPoints(region_object["features"], avgGroundwater, [MMIN, MMAX])
-
-    #         ujson.dump(hex_object, outfile)
+    for f in new_fs:
+        f["properties"]["processed_area"] = area.area(f["geometry"]) / 6e8
+        f["properties"]["Groundwater"] = [ float(i) for i in list(f["properties"]["Groundwater"].values())[1:-1]]
+    
+    avgsGW = [RollingAvg() for _ in range(1200)]    
+    
+    for f in new_fs:
+        gw_temporal = f["properties"]["Groundwater"]
+        rea = f["properties"]["processed_area"]
+        for i in range(len(gw_temporal)):
+            avgsGW[i].add_to_avg(gw_temporal[i], rea)
 
     with open("averages.csv", "w") as outfile:
         outfile.write(",".join(["averageUnmetDemandBaseline"] + [str(r.get_avg()) for r in avgsUnmetDemandBaseline]) + "\n")
@@ -108,6 +113,7 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
         outfile.write(",".join(["averageDemandDifference"] + [str(r.get_avg()) for r in avgsDemandDifference]) + "\n")
         outfile.write(",".join(["averageSupplyBaseline"] + [str(r.get_avg()) for r in avgsSupplyBaseline]) + "\n")
         outfile.write(",".join(["averageSupply"] + [str(r.get_avg()) for r in avgsSupply]) + "\n")
+        outfile.write(",".join(["averageGroundwater"] + [str(r.get_avg()) for r in avgsGW]) + "\n")
 
     with open("averages.json", "w") as outfile:
         ujson.dump({
@@ -117,5 +123,6 @@ with urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes
             "averageDemandBaseline": [r.get_avg() for r in avgsDemandBaseline],
             "averageDemandDifference": [r.get_avg() for r in avgsDemandDifference],
             "averageSupplyBaseline": [r.get_avg() for r in avgsSupplyBaseline],
-            "averageSupply": [r.get_avg() for r in avgsSupply]
+            "averageSupply": [r.get_avg() for r in avgsSupply],
+            "averageGroundwater": [r.get_avg() for r in avgsGW]
         }, outfile)
