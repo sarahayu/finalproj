@@ -1,5 +1,5 @@
 import { AmbientLight, _SunLight as SunLight } from '@deck.gl/core';
-import { FlyToInterpolator } from 'deck.gl';
+import { FlyToInterpolator, LightingEffect } from 'deck.gl';
 
 export const INITIAL_VIEW_STATE = {
   longitude: -121.046040643251,
@@ -119,3 +119,8 @@ export function inRange(a, x, y) {
 }
 
 export const USE_TERRAIN_3D = false;
+
+export const LIGHTING = new LightingEffect({
+  ambientLight: AMBIENT_LIGHT,
+  dirLight: DIR_LIGHT,
+});

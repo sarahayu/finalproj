@@ -50,7 +50,6 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
         if (!hextiles) return
 
         let data = []
-        console.log("in rest of draw")
 
         let curRes = d3.scaleQuantize()
             .domain([0, 1])
