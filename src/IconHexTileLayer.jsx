@@ -1,71 +1,74 @@
+import * as d3 from 'd3';
+import { CompositeLayer, SimpleMeshLayer } from 'deck.gl';
+import * as h3 from 'h3-js';
+import { FORMATIONS } from './utils/utils';
 
-import * as d3 from 'd3'
-import { CompositeLayer, SimpleMeshLayer } from "deck.gl"
-import * as h3 from 'h3-js'
-import { FORMATIONS } from "./utils/utils"
-
-const formationInterp = d3.scaleQuantize()
+const formationInterp = d3
+  .scaleQuantize()
   .domain([0, 1])
   .range(d3.range(0, FORMATIONS.length));
 
 export default class IconHexTileLayer extends CompositeLayer {
-
   initializeState() {
     super.initializeState();
     this.setState({
       hextiles: this.props.data,
-      resRange: Object.keys(this.props.data).map(d => parseInt(d)),
-    })
+      resRange: Object.keys(this.props.data).map((d) => parseInt(d)),
+    });
   }
 
   renderLayers() {
+    const { hextiles, resRange } = this.state;
 
-    const { hextiles, resRange } = this.state
+    if (!hextiles) return;
 
-    if (!hextiles) return
+    let data = [];
 
-    let data = []
-
-    let curRes = d3.scaleQuantize()
-      .domain([0, 1])
-      .range(resRange)(this.props.resolution)
-    
     // console.log(resIdx)
 
-    let resHex = hextiles[curRes]
-    const edgeLen = h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) / 250 * 1.75
-    let iconScale = h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) / h3.getHexagonEdgeLengthAvg(5, h3.UNITS.km)
+    let resHex = hextiles[this.props.curRes];
+    const edgeLen =
+      (h3.getHexagonEdgeLengthAvg(this.props.curRes, h3.UNITS.km) / 250) * 1.75;
+    let iconScale =
+      h3.getHexagonEdgeLengthAvg(this.props.curRes, h3.UNITS.km) /
+      h3.getHexagonEdgeLengthAvg(5, h3.UNITS.km);
 
     // console.log(iconScale)
 
-    Object.keys(resHex).forEach(hexID => {
-      let properties = resHex[hexID]
+    Object.keys(resHex).forEach((hexID) => {
+      let properties = resHex[hexID];
 
-      const [y, x] = h3.cellToLatLng(hexID)
+      const [y, x] = h3.cellToLatLng(hexID);
 
-      const id = this.props.getValue ? formationInterp(this.props.getValue({ properties })) : 1
+      const id = this.props.getValue
+        ? formationInterp(this.props.getValue({ properties }))
+        : 1;
 
       // if (id2 > id) {
       //   console.log(id, id2)
       //   return
       // }
 
-      for (let [dx, dy, dz] of this.props.getValue ? FORMATIONS[id] : [[0, 0, 0]]) {
-
-        let [ddx, ddy] = this.props.offset
+      for (let [dx, dy, dz] of this.props.getValue
+        ? FORMATIONS[id]
+        : [[0, 0, 0]]) {
+        let [ddx, ddy] = this.props.offset;
         data.push({
-          position: [x + dx * edgeLen + ddx * edgeLen, y + dy * edgeLen + ddy * edgeLen, this.props.getElevation({ properties }) + dz * 10000],
+          position: [
+            x + dx * edgeLen + ddx * edgeLen,
+            y + dy * edgeLen + ddy * edgeLen,
+            this.props.getElevation({ properties }) + dz * 10000,
+          ],
           properties,
-        })
+        });
       }
-
-    })
+    });
 
     return [
       new SimpleMeshLayer({
         id: `${this.props.id}IconHexTileLayer`,
         data,
-        getPosition: d => d.position,
+        getPosition: (d) => d.position,
 
         mesh: this.props.mesh,
         texture: this.props.texture,
@@ -95,11 +98,11 @@ export default class IconHexTileLayer extends CompositeLayer {
         extensions: this.props.extensions,
         transitions: this.props.transitions,
       }),
-    ]
+    ];
   }
 }
 
-IconHexTileLayer.layerName = 'IconHexTileLayer'
+IconHexTileLayer.layerName = 'IconHexTileLayer';
 IconHexTileLayer.defaultProps = {
   ...CompositeLayer.defaultProps,
   ...SimpleMeshLayer.defaultProps,
@@ -109,4 +112,4 @@ IconHexTileLayer.defaultProps = {
   getValue: undefined,
   getElevation: () => 0,
   offset: [0, 0],
-}
+};

@@ -1,139 +1,129 @@
-import * as d3 from 'd3'
-
+import * as d3 from 'd3';
 
 function RGBtoHSV(color) {
-    let r, g, b, h, s, v
-    r = color[0]
-    g = color[1]
-    b = color[2]
-    let minn = Math.min(r, g, b)
-    let maxx = Math.max(r, g, b)
+  let r, g, b, h, s, v;
+  r = color[0];
+  g = color[1];
+  b = color[2];
+  let minn = Math.min(r, g, b);
+  let maxx = Math.max(r, g, b);
 
-
-    v = maxx
-    let delta = maxx - minn
-    if (maxx != 0)
-        s = delta / maxx        // s
-    else {
-        // r = g = b = 0        // s = 0, v is undefined
-        s = 0
-        h = -1
-        v = 0
-        return [h, s, v]
-    }
-    if (r === maxx)
-        h = (g - b) / delta      // between yellow & magenta
-    else if (g === maxx)
-        h = 2 + (b - r) / delta  // between cyan & yellow
-    else
-        h = 4 + (r - g) / delta  // between magenta & cyan
-    h *= 60                // degrees
-    if (h < 0)
-        h += 360
-    if (isNaN(h))
-        h = 0
-    return [h, s, v]
+  v = maxx;
+  let delta = maxx - minn;
+  if (maxx != 0) s = delta / maxx; // s
+  else {
+    // r = g = b = 0        // s = 0, v is undefined
+    s = 0;
+    h = -1;
+    v = 0;
+    return [h, s, v];
+  }
+  if (r === maxx) h = (g - b) / delta; // between yellow & magenta
+  else if (g === maxx) h = 2 + (b - r) / delta; // between cyan & yellow
+  else h = 4 + (r - g) / delta; // between magenta & cyan
+  h *= 60; // degrees
+  if (h < 0) h += 360;
+  if (isNaN(h)) h = 0;
+  return [h, s, v];
 }
 
 function HSVtoRGB(color) {
-    let i
-    let h, s, v, r, g, b
-    h = color[0]
-    s = color[1]
-    v = color[2]
-    if (s === 0) {
-        // achromatic (grey)
-        r = g = b = v
-        return [r, g, b]
-    }
-    h /= 60            // sector 0 to 5
-    i = Math.floor(h)
-    let f = h - i          // factorial part of h
-    let p = v * (1 - s)
-    let q = v * (1 - s * f)
-    let t = v * (1 - s * (1 - f))
-    switch (i) {
-        case 0:
-            r = v
-            g = t
-            b = p
-            break
-        case 1:
-            r = q
-            g = v
-            b = p
-            break
-        case 2:
-            r = p
-            g = v
-            b = t
-            break
-        case 3:
-            r = p
-            g = q
-            b = v
-            break
-        case 4:
-            r = t
-            g = p
-            b = v
-            break
-        default:        // case 5:
-            r = v
-            g = p
-            b = q
-            break
-    }
-    return [r, g, b]
+  let i;
+  let h, s, v, r, g, b;
+  h = color[0];
+  s = color[1];
+  v = color[2];
+  if (s === 0) {
+    // achromatic (grey)
+    r = g = b = v;
+    return [r, g, b];
+  }
+  h /= 60; // sector 0 to 5
+  i = Math.floor(h);
+  let f = h - i; // factorial part of h
+  let p = v * (1 - s);
+  let q = v * (1 - s * f);
+  let t = v * (1 - s * (1 - f));
+  switch (i) {
+    case 0:
+      r = v;
+      g = t;
+      b = p;
+      break;
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+    default: // case 5:
+      r = v;
+      g = p;
+      b = q;
+      break;
+  }
+  return [r, g, b];
 }
 
-export function saturate({col, saturation, brightness}) {
-    saturation = saturation || 2
-    brightness = brightness || 1
+export function saturate({ col, saturation, brightness }) {
+  saturation = saturation || 2;
+  brightness = brightness || 1;
 
+  const hsv = RGBtoHSV(col);
+  hsv[1] *= saturation;
+  const rgb = HSVtoRGB(hsv);
 
-    const hsv = RGBtoHSV(col)
-    hsv[1] *= saturation
-    const rgb = HSVtoRGB(hsv)
-    
-    const newrgb = d3.scaleLinear()
-      .domain([-1, 0, 1])
-      .range([[0,0,0], rgb, [255, 255, 255]])
-      .clamp(true)(
-      (1 - Math.exp(-2 * (brightness - 1))) /
-        (1 + Math.exp(-2 * (brightness - 1)))
-    );
+  const newrgb = d3
+    .scaleLinear()
+    .domain([-1, 0, 1])
+    .range([[0, 0, 0], rgb, [255, 255, 255]])
+    .clamp(true)(
+    (1 - Math.exp(-2 * (brightness - 1))) /
+      (1 + Math.exp(-2 * (brightness - 1)))
+  );
 
-    return newrgb;
+  return newrgb;
 }
 
 export function dataFilter(data, cond, excludeRes) {
-    let newData = {}
-    if (!excludeRes) excludeRes = []
+  let newData = {};
+  if (!excludeRes) excludeRes = [];
 
-    Object.keys(data).forEach(res => {
-        if (excludeRes.includes(res)) return
-        let hexes = data[res]
-        let newHexes = {}
-        Object.keys(hexes).forEach(hexId => {
-            if (cond(hexes[hexId]))
-                newHexes[hexId] = hexes[hexId]
-        })
-        newData[res] = newHexes
-    })
-    return newData
+  Object.keys(data).forEach((res) => {
+    if (excludeRes.includes(res)) return;
+    let hexes = data[res];
+    let newHexes = {};
+    Object.keys(hexes).forEach((hexId) => {
+      if (cond(hexes[hexId])) newHexes[hexId] = hexes[hexId];
+    });
+    newData[res] = newHexes;
+  });
+  return newData;
 }
 
-
 export function flatten(arr) {
-    return [].concat.apply([], arr)
+  return [].concat.apply([], arr);
 }
 
 export function extent2D(arrOfArr) {
-    return d3.extent(flatten(arrOfArr.map(arr => d3.extent(arr))))
+  return d3.extent(flatten(arrOfArr.map((arr) => d3.extent(arr))));
 }
 
-
+// prettier-ignore
 export const FORMATIONS = [
     /* none         */[[0, 0, -1], [-0.67, 0, -1], [0.67, 0, -1], [-0.33, 0.58, -1], [0.33, 0.58, -1], [-0.33, -0.58, -1], [0.33, -0.58, -1]],
     /* dot          */[[0, 0, -1], [-0.67, 0, -1], [0.67, 0, -1], [-0.33, 0.58, -1], [0.33, 0.58, -1], [-0.33, -0.58, -1], [0, 0, 0]],
@@ -145,7 +135,7 @@ export const FORMATIONS = [
     /* hexagon      */[[0, 0, 0], [-0.67, 0, 0], [0.67, 0, 0], [-0.33, 0.58, 0], [0.33, 0.58, 0], [-0.33, -0.58, 0], [0.33, -0.58, 0],],
 ]
 
-
+// prettier-ignore
 export const INTERIM_FORMATIONS = [
     /* none                     */[
     /*          none            */[[0, 0, -1], [-0.67, 0, -1], [0.67, 0, -1], [-0.33, 0.58, -1], [0.33, 0.58, -1], [-0.33, -0.58, -1], [0.33, -0.58, -1]],

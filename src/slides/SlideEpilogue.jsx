@@ -1,7 +1,6 @@
 import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions';
 import { OBJLoader } from '@loaders.gl/obj';
 import { CompositeLayer } from 'deck.gl';
-import AnimatedIconHexTileLayer from '../AnimatedIconHexTileLayer';
 import IconHexTileLayer from '../IconHexTileLayer';
 import SolidHexTileLayer from '../SolidHexTileLayer';
 import {
@@ -35,7 +34,7 @@ export default class SlideEpilogue extends CompositeLayer {
         data,
         thicknessRange: [0, 1],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -50,7 +49,7 @@ export default class SlideEpilogue extends CompositeLayer {
         data,
         thicknessRange: [0.5, 0.65],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -63,14 +62,14 @@ export default class SlideEpilogue extends CompositeLayer {
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
         pickable: true,
       }),
-      new AnimatedIconHexTileLayer({
+      new IconHexTileLayer({
         id: `ScenarioUnmetEpilogue`,
         data,
         loaders: [OBJLoader],
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => /* colorUnmet */ [255, 130, 35],
         getValue: (d) =>
           valueInterpUnmet(
@@ -90,14 +89,14 @@ export default class SlideEpilogue extends CompositeLayer {
           : {}),
         pickable: true,
       }),
-      new AnimatedIconHexTileLayer({
+      new IconHexTileLayer({
         id: `ScenarioDemandEpilogue`,
         data,
         loaders: [OBJLoader],
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => /* colorDemand */ [255, 130, 35],
         getValue: (d) =>
           valueInterpDemand(
@@ -123,7 +122,7 @@ export default class SlideEpilogue extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/dam.obj',
         raised: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 500,
         visible: displayLandUse && isEpilogue,
@@ -145,7 +144,7 @@ export default class SlideEpilogue extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/cow.obj',
         raised: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 550,
         visible: displayLandUse && isEpilogue,
@@ -167,7 +166,7 @@ export default class SlideEpilogue extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/project.obj',
         raised: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 180,
         visible: displayLandUse && isEpilogue,
@@ -189,7 +188,7 @@ export default class SlideEpilogue extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/nonproject.obj',
         raised: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 140,
         visible: displayLandUse && isEpilogue,
@@ -208,3 +207,5 @@ export default class SlideEpilogue extends CompositeLayer {
     ];
   }
 }
+
+SlideEpilogue.layerName = 'SlideEpilogue';

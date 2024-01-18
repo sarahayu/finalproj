@@ -14,7 +14,7 @@ export default class SlideDeliveries extends CompositeLayer {
         data,
         thicknessRange: [0, 1],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) => colorInterpGW(d.properties.GroundwaterAverage),
@@ -31,7 +31,7 @@ export default class SlideDeliveries extends CompositeLayer {
         data,
         thicknessRange: [0.5, 0.65],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -50,3 +50,5 @@ export default class SlideDeliveries extends CompositeLayer {
     ];
   }
 }
+
+SlideDeliveries.layerName = 'SlideDeliveries';

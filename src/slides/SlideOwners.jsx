@@ -18,7 +18,7 @@ export default class SlideOwners extends CompositeLayer {
         raised: true,
         getElevation: (d) =>
           !transitioning && inRange(slide, 11, 11) ? 2000 : 0,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 500,
         visible: inRange(slide, 9, 13),
@@ -42,7 +42,7 @@ export default class SlideOwners extends CompositeLayer {
         raised: true,
         getElevation: (d) =>
           !transitioning && inRange(slide, 9, 9) ? 2000 : 0,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 550,
         visible: inRange(slide, 9, 13),
@@ -66,7 +66,7 @@ export default class SlideOwners extends CompositeLayer {
         raised: true,
         getElevation: (d) =>
           !transitioning && inRange(slide, 10, 10) ? 2000 : 0,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 180,
         visible: inRange(slide, 9, 13),
@@ -89,7 +89,7 @@ export default class SlideOwners extends CompositeLayer {
         mesh: './src/assets/nonproject.obj',
         raised: true,
         getElevation: (d) => 0,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => [255, 127, 206],
         sizeScale: 0.8 * 140,
         visible: inRange(slide, 9, 13),
@@ -108,3 +108,5 @@ export default class SlideOwners extends CompositeLayer {
     ];
   }
 }
+
+SlideOwners.layerName = 'SlideOwners';

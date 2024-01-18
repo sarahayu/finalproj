@@ -17,7 +17,7 @@ export default class SlideDemandIntro extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => /* colorDemand */ [255, 130, 35],
         getValue: (d) =>
           valueInterpDemand(d.properties.DemandBaseline[counter]),
@@ -38,3 +38,5 @@ export default class SlideDemandIntro extends CompositeLayer {
     ];
   }
 }
+
+SlideDemandIntro.layerName = 'SlideDemandIntro';

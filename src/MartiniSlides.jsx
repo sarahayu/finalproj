@@ -23,3 +23,5 @@ export default class MartiniSlides extends CompositeLayer {
     ];
   }
 }
+
+MartiniSlides.layerName = 'MartiniSlides';

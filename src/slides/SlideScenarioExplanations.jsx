@@ -20,7 +20,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
         data,
         thicknessRange: [0, 1],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -48,7 +48,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => /* colorUnmet */ [255, 130, 35],
         getValue:
           slide == 13
@@ -78,7 +78,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
         data,
         thicknessRange: [0.5, 0.65],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -101,7 +101,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        resolution: curRes,
+        curRes: curRes,
         getColor: (d) => /* colorUnmet */ [255, 130, 35],
         getValue: (d) =>
           valueInterpUnmet(
@@ -126,7 +126,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
         data,
         thicknessRange: [0.5, 0.65],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -145,3 +145,5 @@ export default class SlideScenarioExplanations extends CompositeLayer {
     ];
   }
 }
+
+SlideScenarioExplanations.layerName = 'SlideScenarioExplanations';

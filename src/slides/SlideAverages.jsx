@@ -14,7 +14,7 @@ export default class SlideAverages extends CompositeLayer {
         data,
         thicknessRange: [0, 1],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: true,
         getElevation: (d) =>
           !transitioning &&
@@ -39,7 +39,7 @@ export default class SlideAverages extends CompositeLayer {
         data,
         thicknessRange: [0.5, 0.65],
         filled: true,
-        resolution: curRes,
+        curRes: curRes,
         extruded: true,
         getElevation: (d) =>
           !transitioning &&
@@ -62,3 +62,5 @@ export default class SlideAverages extends CompositeLayer {
     ];
   }
 }
+
+SlideAverages.layerName = 'SlideAverages';

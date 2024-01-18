@@ -15,17 +15,15 @@ import useCounters from './hooks/useCounters';
 import useHexTooltip from './hooks/useHexTooltip';
 import useSandboxGUI from './hooks/useSandboxGUI';
 
-import { resScale } from './utils/scales';
-
 export default function App() {
   const [slide, setSlide] = useState(0);
-  const [curZoom, setCurZoom] = useState(1);
+  const [curRes, setCurRes] = useState(0);
   const [curScenario, setCurScenario] = useState(0);
 
   const curState = {
     data,
     slide,
-    curRes: resScale(curZoom),
+    curRes,
     setSlide,
     curScenario,
     setCurScenario,
@@ -57,7 +55,7 @@ export default function App() {
       <WaterDeckGL
         {...{
           layers,
-          setCurZoom,
+          setCurRes,
           curViewState,
           getTooltip,
         }}
