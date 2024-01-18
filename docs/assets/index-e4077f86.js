@@ -2514,7 +2514,7 @@ uniform ${K} ${se} u_${ce};
     `}}return a&&{html:`        <div><b>Demand (Averaged Over 100 Years)</b></div>
         <div>${a.properties.DemandBaselineAverage}</div>
         <div><b>Supply (Averaged)</b></div>
-        <div>${a.properties.DemandBaselineAverage-a.properties.UnmetDemandBaselineAverage}</div>
+        <div>${a.properties.DemandBaselineAverage+a.properties.UnmetDemandBaselineAverage}</div>
         <div><b>Unmet (Averaged)</b></div>
         <div>${-a.properties.UnmetDemandBaselineAverage}</div>
         <div><b>Groundwater (Averaged)</b></div>

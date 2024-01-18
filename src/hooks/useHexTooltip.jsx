@@ -1,15 +1,20 @@
 import { useCallback } from 'react';
 import { dateInterpIdx } from '../utils/scales';
-import { HOLDERS, inRange, SCENARIOS, SCENARIO_LABELS } from '../utils/settings';
+import {
+  HOLDERS,
+  inRange,
+  SCENARIOS,
+  SCENARIO_LABELS,
+} from '../utils/settings';
 
 export default function useHexTooltip({
-    slide,
-    counter,
-    cycler,
-    curScenario,
-    counting,
-    speedyCounter,
-  }) {
+  slide,
+  counter,
+  cycler,
+  curScenario,
+  counting,
+  speedyCounter,
+}) {
   const getTooltip = useCallback(
     ({ object }) => {
       if (counting || inRange(slide, 1, 6) || slide == 14) {
@@ -100,7 +105,7 @@ export default function useHexTooltip({
         <div>${object.properties.DemandBaselineAverage}</div>
         <div><b>Supply (Averaged)</b></div>
         <div>${
-          object.properties.DemandBaselineAverage -
+          object.properties.DemandBaselineAverage +
           object.properties.UnmetDemandBaselineAverage
         }</div>
         <div><b>Unmet (Averaged)</b></div>
