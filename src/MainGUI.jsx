@@ -4,15 +4,14 @@ import Clock from './Clock';
 import { inRange, SCENARIO_LABELS } from './utils/settings';
 
 export default function MainGUI({
-    slide,
-    setSlide,
-    counter,
-    cycler,
-    curScenario,
-    transitioning,
-    speedyCounter,
-  }) {
-
+  slide,
+  setSlide,
+  counter,
+  cycler,
+  curScenario,
+  transitioning,
+  speedyCounter,
+}) {
   return (
     <>
       <Card slide={slide} transitioning={transitioning} />

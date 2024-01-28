@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { CompositeLayer, SimpleMeshLayer } from 'deck.gl';
 import * as h3 from 'h3-js';
-import { valueInterpDemand } from './utils/scales';
+import { resScale, valueInterpDemand } from './utils/scales';
 import { FORMATIONS, INTERIM_FORMATIONS } from './utils/utils';
 
 const formationInterp = d3
@@ -21,8 +21,8 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
   }
 
   renderLayers() {
-    if (!this.props.visible) return;
     let { hextiles, transitioning, prevGetValueFn, resRange } = this.state;
+    const { zoom } = this.context.viewport;
 
     if (prevGetValueFn === null) {
       this.setState(
@@ -49,28 +49,22 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
       }, 300);
     }
 
-    if (!hextiles) return;
-
     let data = [];
 
-    // let curRes = d3.scaleQuantize()
-    //     .domain([0, 1])
-    //     .range(resRange)(this.props.resolution)
+    const curRes = d3.scaleQuantize().domain([0, 1]).range(resRange)(
+      resScale(zoom)
+    );
 
-    // console.log(resIdx)
-
-    let resHex = hextiles[this.props.curRes];
-    const edgeLen =
-      (h3.getHexagonEdgeLengthAvg(this.props.curRes, h3.UNITS.km) / 250) * 1.75;
+    let resHex = hextiles[curRes];
     let iconScale =
-      h3.getHexagonEdgeLengthAvg(this.props.curRes, h3.UNITS.km) /
+      h3.getHexagonEdgeLengthAvg(curRes, h3.UNITS.km) /
       h3.getHexagonEdgeLengthAvg(5, h3.UNITS.km);
-
-    // console.log(iconScale)
 
     Object.keys(resHex).forEach((hexID) => {
       let properties = resHex[hexID];
 
+      const edgeLen =
+        h3.edgeLength(h3.originToDirectedEdges(hexID)[0], h3.UNITS.km) * 0.5;
       const [y, x] = h3.cellToLatLng(hexID);
 
       const id = this.props.getValue
@@ -87,9 +81,13 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
         let [ddx, ddy] = this.props.offset;
         data.push({
           position: [
-            x + dx * edgeLen + ddx * edgeLen,
-            y + dy * edgeLen + ddy * edgeLen,
-            this.props.getElevation({ properties }) + dz * 10000,
+            x +
+              ((dx + ddx) * edgeLen) / (111.32 * Math.cos((y * 3.1415) / 180)),
+            y + ((dy + ddy) * edgeLen) / 110.574,
+            (typeof this.props.getElevation === 'function'
+              ? this.props.getElevation({ properties })
+              : this.props.getElevation) +
+              dz * 10000,
           ],
           properties,
         });

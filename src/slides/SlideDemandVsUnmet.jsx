@@ -20,7 +20,7 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
         data,
         thicknessRange: [0, 1],
         filled: true,
-        curRes: curRes,
+
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -36,6 +36,9 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
         },
         pickable: true,
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
+        updateTriggers: {
+          getFillColor: [counter, slide],
+        },
       }),
       new AnimatedIconHexTileLayer({
         id: `UnmetDemandIcons1`,
@@ -44,7 +47,7 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        curRes: curRes,
+
         getColor: inRange(slide, 2, 3)
           ? (d) => /* colorDemand */ [255, 130, 35]
           : (d) => /* colorUnmet */ [255, 130, 35],
@@ -75,7 +78,7 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        curRes: curRes,
+
         getColor: inRange(slide, 4, 5)
           ? (d) => /* colorDemand */ [255, 130, 35]
           : (d) => /* colorUnmet */ [255, 130, 35],

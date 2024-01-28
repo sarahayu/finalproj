@@ -1,30 +1,38 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { colorDemand, colorGW, dateInterpIdx } from './utils/scales';
 import * as d3 from 'd3';
 import averageData from './assets/averages.json';
 import { saturate } from './utils/utils';
 
-export default function Clock({ counter, displayMonth, dataset }) {
-    const gwUnsat = saturate({
-      col: colorGW,
-      saturation: 0.5,
-    })
-    const gwSat = saturate({
-      col: colorGW,
-      saturation: 0.5,
-      brightness: 0.5,
-    })
-    const demandUnsat = saturate({
-      col: colorDemand,
-      saturation: 0.5,
-    })
-    const demandSat = saturate({
-      col: colorDemand,
-      saturation: 0.5,
-      brightness: 0.5,
-    })
+const gwUnsat = saturate({
+  col: colorGW,
+  saturation: 0.5,
+});
+const gwSat = saturate({
+  col: colorGW,
+  saturation: 0.5,
+  brightness: 0.5,
+});
+const demandUnsat = saturate({
+  col: colorDemand,
+  saturation: 0.5,
+});
+const demandSat = saturate({
+  col: colorDemand,
+  saturation: 0.5,
+  brightness: 0.5,
+});
 
+export default function Clock({ counter, displayMonth, dataset }) {
   const monthIdx = ((counter + 9) % 12) + 1;
+  const avgDataByYr = useRef();
+
+  useEffect(() => {
+    avgDataByYr.current = Object.groupBy(averageData[dataset], (_, i) =>
+      dateInterpIdx(i).toLocaleString('default', { year: 'numeric' })
+    );
+  }, [dataset]);
+
   const radScale = d3
     .scaleLinear()
     .domain([0, d3.max(averageData[dataset], (d) => d)])
@@ -86,6 +94,7 @@ export default function Clock({ counter, displayMonth, dataset }) {
       d3.select('#date').text('');
     };
   }, [dataset]);
+
   useEffect(() => {
     d3.select('#pie path')
       .attr(
@@ -115,13 +124,12 @@ export default function Clock({ counter, displayMonth, dataset }) {
       d3.select('#date').html(
         '<b>' + date.toLocaleString('default', { year: 'numeric' }) + '</b>'
       );
+
     d3.selectAll('#demandLineCur path')
       .data([
-        averageData[dataset].filter(
-          (_, i) =>
-            dateInterpIdx(i).toLocaleString('default', { year: 'numeric' }) ==
-            date.toLocaleString('default', { year: 'numeric' })
-        ),
+        avgDataByYr.current[
+          dateInterpIdx(counter).toLocaleString('default', { year: 'numeric' })
+        ],
       ])
       .join('path')
       .attr('d', (avgs) => radialMonth(avgs))
@@ -133,12 +141,5 @@ export default function Clock({ counter, displayMonth, dataset }) {
       )
       .attr('stroke-width', '2')
       .attr('fill', 'none');
-
-    // return function() {
-    //     d3.select("#pie path").attr("d", "")
-    //     d3.select("#demandLine path").attr("d", "")
-    //     d3.select("#date").text("")
-    //     d3.select("#year").text("")
-    // }
-  });
+  }, [dataset, counter]);
 }

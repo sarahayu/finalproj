@@ -2,6 +2,7 @@ import { CompositeLayer, SolidPolygonLayer } from 'deck.gl';
 import * as d3 from 'd3';
 import * as h3 from 'h3-js';
 import { lerp } from '@math.gl/core';
+import { resScale } from './utils/scales';
 
 function scaleBounds(hexId, paths, value = 1) {
   // if(!outside) return
@@ -36,22 +37,30 @@ function calcPolyBorder(hexId, [thicknessMin, thicknessMax]) {
 export default class SolidHexTileLayer extends CompositeLayer {
   initializeState() {
     super.initializeState();
+
+    const resRange = Object.keys(this.props.data).map((d) => parseInt(d));
+    const lastResolution = d3.scaleQuantize().domain([0, 1]).range(resRange)(
+      resScale(this.context.viewport.zoom)
+    );
+
     this.setState({
-      hextiles: this.props.data, //geojsonToHexPoints(this.props.data.features, this.props.averageFn, this.props.resRange),
-      resRange: Object.keys(this.props.data).map((d) => parseInt(d)),
+      ...this.state,
+      resRange,
+      lastResolution,
     });
+
+    this.createPolygons();
   }
 
-  renderLayers() {
-    const { hextiles } = this.state;
+  createPolygons() {
+    console.log('updating SolidHexTile polygons');
+    const { lastResolution } = this.state;
 
-    if (!hextiles) return;
+    const polygons = [];
 
-    let polygons = [];
+    const resHex = this.props.data[lastResolution];
 
-    let resHex = hextiles[this.props.curRes];
-
-    Object.keys(resHex).forEach((hexId) => {
+    Object.keys(resHex).forEach((hexId, i) => {
       let properts = resHex[hexId];
 
       let tilePolygon = calcPolyBorder(hexId, [
@@ -67,7 +76,9 @@ export default class SolidHexTileLayer extends CompositeLayer {
             hexPoints.map(([x, y]) => [
               x,
               y,
-              this.props.getElevation({ properties: properts }),
+              typeof this.props.getElevation === 'function'
+                ? this.props.getElevation({ properties: properts })
+                : this.props.getElevation,
             ])
           ),
           properties: properts,
@@ -79,10 +90,47 @@ export default class SolidHexTileLayer extends CompositeLayer {
         });
     });
 
+    this.setState({
+      ...this.state,
+      polygons,
+    });
+  }
+
+  shouldUpdateState({ changeFlags }) {
+    return changeFlags.somethingChanged;
+  }
+
+  updateState(params) {
+    const { resRange, lastResolution } = this.state;
+    const { props, oldProps, changeFlags, context } = params;
+    // const sup = super.shouldUpdateState(params);
+
+    if (
+      props.getElevation != oldProps.getElevation ||
+      changeFlags.viewportChanged
+    ) {
+      const curRes = d3.scaleQuantize().domain([0, 1]).range(resRange)(
+        resScale(context.viewport.zoom)
+      );
+
+      if (
+        curRes != lastResolution ||
+        props.getElevation != oldProps.getElevation
+      ) {
+        this.setState({
+          ...this.state,
+          lastResolution: curRes,
+        });
+        this.createPolygons();
+      }
+    }
+  }
+
+  renderLayers() {
     return [
       new SolidPolygonLayer({
         id: `${this.props.id}SolidHexTileLayer`,
-        data: polygons,
+        data: this.state.polygons,
         getPolygon: (d) => d.polygon,
         filled: this.props.filled,
         wireframe: this.props.wireframe,
@@ -107,7 +155,5 @@ SolidHexTileLayer.defaultProps = {
   ...CompositeLayer.defaultProps,
   ...SolidPolygonLayer.defaultProps,
   thicknessRange: [0.7, 0.9],
-  resolution: 0,
-  resRange: [5, 5],
   getValue: undefined,
 };

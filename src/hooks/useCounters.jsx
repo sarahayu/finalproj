@@ -12,7 +12,7 @@ export default function useCounters({ slide }) {
     if (playing) {
       let timer = setTimeout(
         () => setSpeedyCounter((c) => (c % 1199) + 1),
-        250
+        1000 / 30
       );
       return function () {
         clearTimeout(timer);

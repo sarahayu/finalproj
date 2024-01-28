@@ -12,6 +12,7 @@ export default class SlideTerrain extends CompositeLayer {
               minZoom: 7,
               maxZoom: 11,
               tileSize: 256,
+              zoomOffset: -1,
 
               renderSubLayers: (props) => {
                 const {
@@ -31,8 +32,6 @@ export default class SlideTerrain extends CompositeLayer {
         ? [
             new TerrainLayer({
               id: 'terrain',
-              minZoom: 7,
-              maxZoom: 11,
               strategy: 'no-overlap',
               elevationDecoder: {
                 rScaler: 5 * 256,

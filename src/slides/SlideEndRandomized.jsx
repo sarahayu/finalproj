@@ -19,7 +19,7 @@ export default class SlideEndRandomized extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        curRes: curRes,
+
         getColor: (d) => /* colorUnmet */ [255, 130, 35],
         getValue: (d) =>
           valueInterpUnmet(
@@ -40,13 +40,16 @@ export default class SlideEndRandomized extends CompositeLayer {
             }
           : {}),
         pickable: true,
+        updateTriggers: {
+          getTranslation: [cycler],
+        },
       }),
       new SolidHexTileLayer({
         id: `DifferenceLayerRandomized`,
         data,
         thicknessRange: [0.5, 0.65],
         filled: true,
-        curRes: curRes,
+
         extruded: false,
         raised: false,
         getFillColor: (d) =>
@@ -65,6 +68,9 @@ export default class SlideEndRandomized extends CompositeLayer {
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
         pickable: true,
+        updateTriggers: {
+          getFillColor: [cycler],
+        },
       }),
     ];
   }

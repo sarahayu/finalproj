@@ -17,7 +17,7 @@ export default class SlideDemandIntro extends CompositeLayer {
         mesh: './src/assets/drop.obj',
         raised: true,
         extruded: false,
-        curRes: curRes,
+
         getColor: (d) => /* colorDemand */ [255, 130, 35],
         getValue: (d) =>
           valueInterpDemand(d.properties.DemandBaseline[counter]),
@@ -34,6 +34,9 @@ export default class SlideDemandIntro extends CompositeLayer {
             }
           : {}),
         pickable: true,
+        updateTriggers: {
+          getTranslation: [counter],
+        },
       }),
     ];
   }

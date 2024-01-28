@@ -17,13 +17,11 @@ import useSandboxGUI from './hooks/useSandboxGUI';
 
 export default function App() {
   const [slide, setSlide] = useState(0);
-  const [curRes, setCurRes] = useState(0);
   const [curScenario, setCurScenario] = useState(0);
 
   const curState = {
     data,
     slide,
-    curRes,
     setSlide,
     curScenario,
     setCurScenario,
@@ -55,7 +53,6 @@ export default function App() {
       <WaterDeckGL
         {...{
           layers,
-          setCurRes,
           curViewState,
           getTooltip,
         }}

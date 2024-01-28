@@ -16,10 +16,9 @@ export default class SlideOwners extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/dam.obj',
         raised: true,
-        getElevation: (d) =>
-          !transitioning && inRange(slide, 11, 11) ? 2000 : 0,
-        curRes: curRes,
-        getColor: (d) => [255, 127, 206],
+        getElevation: !transitioning && inRange(slide, 11, 11) ? 2000 : 0,
+
+        getColor: [255, 127, 206],
         sizeScale: 0.8 * 500,
         visible: inRange(slide, 9, 13),
         opacity: 1,
@@ -33,6 +32,9 @@ export default class SlideOwners extends CompositeLayer {
             }
           : {}),
         pickable: true,
+        updateTriggers: {
+          getElevation: [slide, transitioning],
+        },
       }),
       new IconHexTileLayer({
         id: `ExhangeIconsLayer`,
@@ -40,10 +42,9 @@ export default class SlideOwners extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/cow.obj',
         raised: true,
-        getElevation: (d) =>
-          !transitioning && inRange(slide, 9, 9) ? 2000 : 0,
-        curRes: curRes,
-        getColor: (d) => [255, 127, 206],
+        getElevation: !transitioning && inRange(slide, 9, 9) ? 2000 : 0,
+
+        getColor: [255, 127, 206],
         sizeScale: 0.8 * 550,
         visible: inRange(slide, 9, 13),
         opacity: 1,
@@ -57,6 +58,9 @@ export default class SlideOwners extends CompositeLayer {
             }
           : {}),
         pickable: true,
+        updateTriggers: {
+          getElevation: [slide, transitioning],
+        },
       }),
       new IconHexTileLayer({
         id: `ProjectIconsLayer`,
@@ -64,10 +68,9 @@ export default class SlideOwners extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/project.obj',
         raised: true,
-        getElevation: (d) =>
-          !transitioning && inRange(slide, 10, 10) ? 2000 : 0,
-        curRes: curRes,
-        getColor: (d) => [255, 127, 206],
+        getElevation: !transitioning && inRange(slide, 10, 10) ? 2000 : 0,
+
+        getColor: [255, 127, 206],
         sizeScale: 0.8 * 180,
         visible: inRange(slide, 9, 13),
         opacity: 1,
@@ -81,6 +84,9 @@ export default class SlideOwners extends CompositeLayer {
             }
           : {}),
         pickable: true,
+        updateTriggers: {
+          getElevation: [slide, transitioning],
+        },
       }),
       new IconHexTileLayer({
         id: `NonProjectIconsLayer`,
@@ -88,9 +94,9 @@ export default class SlideOwners extends CompositeLayer {
         loaders: [OBJLoader],
         mesh: './src/assets/nonproject.obj',
         raised: true,
-        getElevation: (d) => 0,
-        curRes: curRes,
-        getColor: (d) => [255, 127, 206],
+        getElevation: 0,
+
+        getColor: [255, 127, 206],
         sizeScale: 0.8 * 140,
         visible: inRange(slide, 9, 13),
         opacity: 1,
@@ -104,6 +110,9 @@ export default class SlideOwners extends CompositeLayer {
             }
           : {}),
         pickable: true,
+        updateTriggers: {
+          getElevation: [slide, transitioning],
+        },
       }),
     ];
   }
