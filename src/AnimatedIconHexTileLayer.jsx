@@ -114,19 +114,19 @@ export default class AnimatedIconHexTileLayer extends CompositeLayer {
 
         /* props inherited from Layer class */
 
-        autoHighlight: this.props.autoHighlight,
         coordinateOrigin: this.props.coordinateOrigin,
         coordinateSystem: this.props.coordinateSystem,
         highlightColor: this.props.highlightColor,
         loaders: this.props.loaders,
         modelMatrix: this.props.modelMatrix,
         opacity: this.props.opacity,
-        pickable: this.props.pickable,
         visible: this.props.visible,
         wrapLongitude: this.props.wrapLongitude,
         updateTriggers: this.props.updateTriggers,
         extensions: this.props.extensions,
         transitions: this.props.transitions,
+        pickable: this.props.pickable,
+        autoHighlight: this.props.autoHighlight,
       }),
     ];
   }

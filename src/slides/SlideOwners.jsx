@@ -31,7 +31,7 @@ export default class SlideOwners extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getElevation: [slide, transitioning],
         },
@@ -57,7 +57,7 @@ export default class SlideOwners extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getElevation: [slide, transitioning],
         },
@@ -83,7 +83,7 @@ export default class SlideOwners extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getElevation: [slide, transitioning],
         },
@@ -109,7 +109,7 @@ export default class SlideOwners extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getElevation: [slide, transitioning],
         },

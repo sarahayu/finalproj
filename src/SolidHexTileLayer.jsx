@@ -135,7 +135,6 @@ export default class SolidHexTileLayer extends CompositeLayer {
         filled: this.props.filled,
         wireframe: this.props.wireframe,
         extruded: this.props.extruded,
-        pickable: this.props.pickable,
         getFillColor: this.props.getFillColor,
         getElevation: this.props.getElevation,
         getLineColor: this.props.getLineColor,
@@ -144,6 +143,9 @@ export default class SolidHexTileLayer extends CompositeLayer {
         updateTriggers: this.props.updateTriggers,
         extensions: this.props.extensions,
         transitions: this.props.transitions,
+        pickable: this.props.pickable,
+        autoHighlight: this.props.autoHighlight,
+        highlightColor: this.props.highlightColor,
         // parameters: {cull: true},
       }),
     ];

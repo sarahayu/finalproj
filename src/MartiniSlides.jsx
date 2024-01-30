@@ -1,4 +1,4 @@
-import { CompositeLayer } from 'deck.gl';
+import { CompositeLayer, PolygonLayer } from 'deck.gl';
 
 import SlideAverages from './slides/SlideAverages';
 import SlideDeliveries from './slides/SlideDeliveries';
@@ -25,3 +25,8 @@ export default class MartiniSlides extends CompositeLayer {
 }
 
 MartiniSlides.layerName = 'MartiniSlides';
+MartiniSlides.defaultProps = {
+  ...CompositeLayer.defaultProps,
+  autoHighlight: true,
+  pickable: true,
+};

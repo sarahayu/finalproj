@@ -24,7 +24,7 @@ export default class SlideDeliveries extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
       }),
       new SolidHexTileLayer({
         id: `DeliveryWaterLayer`,
@@ -45,7 +45,7 @@ export default class SlideDeliveries extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
       }),
     ];
   }

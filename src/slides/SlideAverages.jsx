@@ -58,6 +58,7 @@ export default class SlideAverages extends CompositeLayer {
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
         pickable: true,
+        autoHighlight: true,
         updateTriggers: {
           getElevation: [slide, transitioning],
         },
@@ -79,7 +80,8 @@ export default class SlideAverages extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
+        // autoHighlight: true,
         updateTriggers: {
           getElevation: [slide, transitioning],
         },

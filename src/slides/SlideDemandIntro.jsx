@@ -33,7 +33,7 @@ export default class SlideDemandIntro extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [counter],
         },

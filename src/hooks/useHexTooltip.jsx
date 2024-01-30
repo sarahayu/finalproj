@@ -17,11 +17,11 @@ export default function useHexTooltip({
 }) {
   const getTooltip = useCallback(
     ({ object }) => {
-      if (counting || inRange(slide, 1, 6) || slide == 14) {
+      if (counting || inRange(slide, 0, 6) || slide == 14) {
         let date =
           slide == 14
             ? dateInterpIdx(1026)
-            : inRange(slide, 1, 2)
+            : inRange(slide, 0, 2)
             ? dateInterpIdx(counter)
             : inRange(slide, 3, 4)
             ? dateInterpIdx(1026)
@@ -29,7 +29,7 @@ export default function useHexTooltip({
         let cc =
           slide == 14
             ? 1026
-            : inRange(slide, 1, 2)
+            : inRange(slide, 0, 2)
             ? counter
             : inRange(slide, 3, 4)
             ? 1026

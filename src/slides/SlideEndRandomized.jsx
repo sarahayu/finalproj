@@ -39,7 +39,7 @@ export default class SlideEndRandomized extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [cycler],
         },
@@ -67,7 +67,7 @@ export default class SlideEndRandomized extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getFillColor: [cycler],
         },

@@ -39,7 +39,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
       }),
       new AnimatedIconHexTileLayer({
         id: `ScenarioUnmet`,
@@ -71,7 +71,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
       }),
       new SolidHexTileLayer({
         id: `DifferenceLayer`,
@@ -92,7 +92,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
       }),
       new AnimatedIconHexTileLayer({
         id: `ScenarioUnmet1197`,
@@ -119,7 +119,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
       }),
       new SolidHexTileLayer({
         id: `DifferenceLayer1197`,
@@ -140,7 +140,7 @@ export default class SlideScenarioExplanations extends CompositeLayer {
           opacity: 250,
         },
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
       }),
     ];
   }

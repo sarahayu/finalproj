@@ -1,4 +1,5 @@
 import { BitmapLayer, CompositeLayer, TileLayer } from 'deck.gl';
+import SolidHexTileLayer from '../SolidHexTileLayer';
 import { USE_TERRAIN_3D } from '../utils/settings';
 
 export default class SlideTerrain extends CompositeLayer {
@@ -45,8 +46,28 @@ export default class SlideTerrain extends CompositeLayer {
             }),
           ]
         : []),
+      new SolidHexTileLayer({
+        id: `HoveringTiles`,
+        data: this.props.data,
+        thicknessRange: [0, 1],
+        filled: true,
+
+        extruded: false,
+        raised: false,
+        getFillColor: [0, 0, 0, 0],
+        ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
+        pickable: true,
+        autoHighlight: true,
+      }),
     ];
   }
 }
 
 SlideTerrain.layerName = 'SlideTerrain';
+// SlideTerrain.defaultProps = {
+//   ...CompositeLayer.defaultProps,
+//   autoHighlight: true,
+//   pickable: true,
+//   // thicknessRange: [0.7, 0.9],
+//   // getValue: undefined,
+// };

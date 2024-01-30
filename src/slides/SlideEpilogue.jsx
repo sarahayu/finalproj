@@ -39,6 +39,20 @@ export default class SlideEpilogue extends CompositeLayer {
 
     return [
       new SolidHexTileLayer({
+        id: `HoveringTilesEpilogue`,
+        data: data,
+        thicknessRange: [0, 1],
+        filled: true,
+
+        extruded: false,
+        raised: false,
+        getFillColor: [0, 0, 0, 0],
+        ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
+        visible: isEpilogue,
+        pickable: true,
+        autoHighlight: true,
+      }),
+      new SolidHexTileLayer({
         id: `GroundwaterEpilogue`,
         data,
         thicknessRange: [0, 1],
@@ -51,7 +65,7 @@ export default class SlideEpilogue extends CompositeLayer {
         visible: displayGW && isEpilogue,
         opacity: 0.2,
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getFillColor: [speedyCounter],
         },
@@ -72,7 +86,7 @@ export default class SlideEpilogue extends CompositeLayer {
         visible: displayDiff && isEpilogue,
         opacity: 1.0,
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getFillColor: [speedyCounter],
         },
@@ -102,7 +116,7 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -132,7 +146,7 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -157,7 +171,7 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -182,7 +196,7 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -207,7 +221,7 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -232,7 +246,7 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -242,3 +256,10 @@ export default class SlideEpilogue extends CompositeLayer {
 }
 
 SlideEpilogue.layerName = 'SlideEpilogue';
+SlideEpilogue.defaultProps = {
+  ...CompositeLayer.defaultProps,
+  autoHighlight: true,
+  pickable: true,
+  // thicknessRange: [0.7, 0.9],
+  // getValue: undefined,
+};

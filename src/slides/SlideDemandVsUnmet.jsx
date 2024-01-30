@@ -34,7 +34,7 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
         transitions: {
           opacity: 250,
         },
-        pickable: true,
+        // pickable: true,
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
         updateTriggers: {
           getFillColor: [counter, slide],
@@ -69,7 +69,7 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
       }),
       new AnimatedIconHexTileLayer({
         id: `UnmetDemandIcons2`,
@@ -100,7 +100,7 @@ export default class SlideDemandVsUnmet extends CompositeLayer {
               ],
             }
           : {}),
-        pickable: true,
+        // pickable: true,
       }),
     ];
   }
