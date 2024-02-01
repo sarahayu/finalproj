@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 import { CompositeLayer, SimpleMeshLayer } from 'deck.gl';
 import * as h3 from 'h3-js';
-import { resScale } from './utils/scales';
-import { FORMATIONS } from './utils/utils';
+import { resScale } from '../utils/scales';
+import { FORMATIONS } from '../utils/utils';
 
 const formationInterp = d3
   .scaleQuantize()

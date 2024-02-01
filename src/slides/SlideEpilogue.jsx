@@ -1,8 +1,8 @@
 import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions';
 import { OBJLoader } from '@loaders.gl/obj';
 import { CompositeLayer } from 'deck.gl';
-import IconHexTileLayer from '../IconHexTileLayer';
-import SolidHexTileLayer from '../SolidHexTileLayer';
+import IconHexTileLayer from '../hextile/IconHexTileLayer';
+import SolidHexTileLayer from '../hextile/SolidHexTileLayer';
 import {
   colorInterpDifference,
   colorInterpGW,
@@ -65,7 +65,6 @@ export default class SlideEpilogue extends CompositeLayer {
         visible: displayGW && isEpilogue,
         opacity: 0.2,
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        // pickable: true,
         updateTriggers: {
           getFillColor: [speedyCounter],
         },
@@ -86,7 +85,6 @@ export default class SlideEpilogue extends CompositeLayer {
         visible: displayDiff && isEpilogue,
         opacity: 1.0,
         ...(USE_TERRAIN_3D ? { extensions: [new TerrainExtension()] } : {}),
-        // pickable: true,
         updateTriggers: {
           getFillColor: [speedyCounter],
         },
@@ -116,7 +114,6 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -146,7 +143,6 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -171,7 +167,6 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -196,7 +191,6 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -221,7 +215,6 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },
@@ -246,7 +239,6 @@ export default class SlideEpilogue extends CompositeLayer {
               ],
             }
           : {}),
-        // pickable: true,
         updateTriggers: {
           getTranslation: [speedyCounter],
         },

@@ -1,8 +1,8 @@
 import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions';
 import { OBJLoader } from '@loaders.gl/obj';
 import { CompositeLayer } from 'deck.gl';
-import AnimatedIconHexTileLayer from '../AnimatedIconHexTileLayer';
-import SolidHexTileLayer from '../SolidHexTileLayer';
+import AnimatedIconHexTileLayer from '../hextile/AnimatedIconHexTileLayer';
+import SolidHexTileLayer from '../hextile/SolidHexTileLayer';
 import {
   colorInterpGW,
   valueInterpDemand,

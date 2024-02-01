@@ -1,7 +1,7 @@
 import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions';
 import { OBJLoader } from '@loaders.gl/obj';
 import { CompositeLayer } from 'deck.gl';
-import IconHexTileLayer from '../IconHexTileLayer';
+import IconHexTileLayer from '../hextile/IconHexTileLayer';
 import { inRange, USE_TERRAIN_3D } from '../utils/settings';
 import { dataFilter } from '../utils/utils';
 

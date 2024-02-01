@@ -1,6 +1,6 @@
 import { _TerrainExtension as TerrainExtension } from '@deck.gl/extensions';
 import { CompositeLayer } from 'deck.gl';
-import SolidHexTileLayer from '../SolidHexTileLayer';
+import SolidHexTileLayer from '../hextile/SolidHexTileLayer';
 import { colorInterpDemand, colorInterpUnmet } from '../utils/scales';
 import { inRange, USE_TERRAIN_3D } from '../utils/settings';
 

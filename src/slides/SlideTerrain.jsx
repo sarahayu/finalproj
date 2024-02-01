@@ -1,5 +1,5 @@
 import { BitmapLayer, CompositeLayer, TileLayer } from 'deck.gl';
-import SolidHexTileLayer from '../SolidHexTileLayer';
+import SolidHexTileLayer from '../hextile/SolidHexTileLayer';
 import { USE_TERRAIN_3D } from '../utils/settings';
 
 export default class SlideTerrain extends CompositeLayer {

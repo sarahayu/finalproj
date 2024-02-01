@@ -2,7 +2,7 @@ import { CompositeLayer, SolidPolygonLayer } from 'deck.gl';
 import * as d3 from 'd3';
 import * as h3 from 'h3-js';
 import { lerp } from '@math.gl/core';
-import { resScale } from './utils/scales';
+import { resScale } from '../utils/scales';
 
 function scaleBounds(hexId, paths, value = 1) {
   // if(!outside) return
