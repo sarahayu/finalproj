@@ -1,7 +1,6 @@
 from functools import reduce
 import urllib.request
 import ujson
-import shapely
 import h3
 import math
 import string
@@ -15,7 +14,7 @@ from turfpy.transformation import intersect as turf_intersect
 from geojson import Feature, FeatureCollection
 
 MMIN = 5
-MMAX = 7
+MMAX = 6
 
 SCENS = [
     "bl_h000",
@@ -39,6 +38,23 @@ def avg_2D(arr):
         for j in range(0, len(arr[0])):
             # round to truncate numbers in final data file
             avg_arr.append(int(round(avg_1D([a[j] for a in arr]))))
+
+def var_1D(arr):
+    if len(arr) == 0:
+        return 0
+    
+    mean = avg_1D(arr)
+    return sum([(x - mean) ** 2 for x in arr]) / len(arr)
+
+def var_2D(rgs):    
+    mi_arr = []
+
+    if len(rgs) != 0:
+        for j in range(0, len(rgs[0])):
+            # round to truncate numbers in final data file
+            mi_arr.append(int(round(var_1D([a[j] for a in rgs]))))
+
+    return mi_arr
 
 
 def weighted_avg_1D(arr, weights):
@@ -172,10 +188,32 @@ def get_moran_i_2D(rgs, neighbors, weights):
     if len(rgs) != 0:
         for j in range(0, len(rgs[0])):
             # round to truncate numbers in final data file
-            mi_arr.append(int(round(get_moran_i_1D([a[j] for a in rgs], neighbors, weights) * 100)))
+            mi_arr.append(int(round(get_moran_i_1D([a[j] for a in rgs], neighbors, weights))))
 
     return mi_arr
 
+
+def truncate_demand_data(demand_file):
+    for feats in demand_file["features"]:
+        for k in feats["properties"]:
+            l = feats["properties"][k]
+
+            if type(l) is list:
+                feats["properties"][k] = [int(round(a)) for a in l]                
+            elif type(l) is dict:
+                for ll in l:
+                    l[ll] = [int(round(a)) for a in l[ll]]
+
+    return demand_file
+
+def truncate_gw_data(gw_file):
+    for feats in gw_file["features"]:
+        l = feats["properties"]["Groundwater"]
+        
+        if type(l) is list:
+            feats["properties"]["Groundwater"] = [int(round(a)) for a in l]
+
+    return gw_file
 
 # Load files (region and temporal)
 
@@ -408,6 +446,8 @@ for res in range(MMIN, MMAX + 1):
 
         newprops["Groundwater"] = weight_by_prop("Groundwater")
         newprops["GroundwaterAverage"] = avg_1D(newprops["Groundwater"])
+        newprops["DURgs"] = demand_rgs
+        newprops["GWRgs"] = gw_rgs
 
         hex_to_props[hx] = newprops
 
@@ -420,7 +460,7 @@ with open(f"hex_{MMIN}_{MMAX}.json", "w") as outfile:
     ujson.dump(final_hex_json, outfile)
 
 with open(f"demand_geo.json", "w") as outfile:
-    ujson.dump(demand_regions, outfile)
+    ujson.dump(truncate_demand_data(demand_regions), outfile)
 
 with open(f"groundwater_geo.json", "w") as outfile:
-    ujson.dump(gw_regions, outfile)
+    ujson.dump(truncate_gw_data(gw_regions), outfile)
