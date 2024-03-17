@@ -17,9 +17,8 @@ MMIN = 5
 MMAX = 6
 
 SCENS = [
+
     "bl_h000",
-    "CS3_ALT3_2022med_L2020ADV",
-    "LTO_BA_EXP1_2022MED",
 ]
 
 DU_AREA_MULT = 1 / 6e8
@@ -53,6 +52,23 @@ def var_2D(rgs):
         for j in range(0, len(rgs[0])):
             # round to truncate numbers in final data file
             mi_arr.append(int(round(var_1D([a[j] for a in rgs]))))
+
+    return mi_arr
+
+def weighted_var_1D(arr, weights):
+    if len(arr) == 0:
+        return 0
+    
+    mean = weighted_avg_1D(arr, weights)
+    return sum([(x - mean) ** 2 for x in arr]) / len(arr)
+
+def weighted_var_2D(rgs, weights):    
+    mi_arr = []
+
+    if len(rgs) != 0:
+        for j in range(0, len(rgs[0])):
+            # round to truncate numbers in final data file
+            mi_arr.append(int(round(weighted_var_1D([a[j] for a in rgs], weights))))
 
     return mi_arr
 
@@ -275,6 +291,7 @@ for feat in feats:
         demand_regions_by_id[duid]["geometry"]["coordinates"] = []
 
         newprops = copy.deepcopy(feat["properties"])
+        newprops["id"] = duid
         newprops["LandUse"] = id_to_val(duid)
         newprops["UnmetDemandBaseline"] = bl_unmet_demands[duid]
         newprops["DemandBaseline"] = bl_demands[duid]
@@ -312,12 +329,13 @@ for region in demand_regions["features"]:
     # props["Area"] = area
 
 for region in gw_regions["features"]:
-    area = turf_area(FeatureCollection([region])) * GW_AREA_MULT
+    # area = turf_area(FeatureCollection([region])) * GW_AREA_MULT
 
-    region["properties"]["Groundwater"] = [ elem / area for elem in region["properties"]["Groundwater"] ]
+    # region["properties"]["Groundwater"] = [ elem / area for elem in region["properties"]["Groundwater"] ]
 
     # # save area because why not
     # region["properties"]["Area"] = area
+    region["properties"]["id"] = region["properties"]["elem_id"]
 
 # For each reses:
 #   Convert multipolygons to hexes (map of hexes -> array of DU_IDs and array of groundwaters)
@@ -381,14 +399,14 @@ for res in range(MMIN, MMAX + 1):
         def find_props_ordered(prop_name):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["DU_ID"] == rg)
+                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return prop_arr
 
         def weight_by_prop(prop_name):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["DU_ID"] == rg)
+                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return weighted_avg_2D(prop_arr, intersect_factors)
 
@@ -399,25 +417,35 @@ for res in range(MMIN, MMAX + 1):
         newprops["UnmetDemandBaselineAverage"] = avg_1D(newprops["UnmetDemandBaseline"])
         newprops["DemandBaselineAverage"] = avg_1D(newprops["DemandBaseline"])
         
-        ud_arr = find_props_ordered("UnmetDemandBaseline")
-        neighbor_arr = [
-            [demand_rgs.index(n) for n in neighbor_map[rg] if n in demand_rgs] for rg in demand_rgs
-        ]
+        # ud_arr = find_props_ordered("UnmetDemandBaseline")
+        # neighbor_arr = [
+        #     [demand_rgs.index(n) for n in neighbor_map[rg] if n in demand_rgs] for rg in demand_rgs
+        # ]
 
-        newprops["MUnmetDemandBaseline"] = get_moran_i_2D(ud_arr, neighbor_arr, intersect_factors)
+        newprops["UnmetDemandBaselineVar"] = weighted_var_2D(find_props_ordered("UnmetDemandBaseline"), intersect_factors)
+        newprops["DemandBaselineVar"] = weighted_var_2D(find_props_ordered("DemandBaseline"), intersect_factors)
 
         newprops["LandUse"] = weighted_mode(find_props_ordered("LandUse"), intersect_factors)
 
         newprops["UnmetDemand"] = {}
         newprops["Demand"] = {}
+        newprops["UnmetDemandVar"] = {}
+        newprops["DemandVar"] = {}
         newprops["UnmetDemandAverage"] = {}
         newprops["DemandAverage"] = {}
 
+
+        def find_props_scen_ordered(prop_name, scen):
+            prop_arr = []
+            for rg in demand_rgs:
+                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
+                prop_arr.append(reg_feat["properties"][prop_name][scen])
+            return prop_arr
         
         def weight_by_prop_scen(prop_name, scen):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["DU_ID"] == rg)
+                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name][scen])
             return weighted_avg_2D(prop_arr, intersect_factors)
 
@@ -425,26 +453,37 @@ for res in range(MMIN, MMAX + 1):
         for scen in SCENS:
             newprops["UnmetDemand"][scen] = weight_by_prop_scen("UnmetDemand", scen)
             newprops["Demand"][scen] = weight_by_prop_scen("Demand", scen)
-            
+            newprops["UnmetDemandVar"][scen] = weighted_var_2D(find_props_scen_ordered("UnmetDemand", scen), intersect_factors)
+            newprops["DemandVar"][scen] = weighted_var_2D(find_props_scen_ordered("Demand", scen), intersect_factors)
+                
             newprops["UnmetDemandAverage"][scen] = avg_1D(newprops["UnmetDemand"][scen])
             newprops["DemandAverage"][scen] = avg_1D(newprops["Demand"][scen])
 
 
+        # PUT BACK IN  * GW_AREA_MULT IF NORMALIZING GW (see L:390)
         
         intersect_factors = []
-        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(gw_regions["features"], lambda e: e["properties"]["elem_id"] == rg)["geometry"]])])) for rg in gw_rgs]) * GW_AREA_MULT
+        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(gw_regions["features"], lambda e: e["properties"]["elem_id"] == rg)["geometry"]])])) for rg in gw_rgs])
 
         for rg in gw_rgs:
-            intersect_factors.append((turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(gw_regions["features"], lambda e: e["properties"]["elem_id"] == rg)["geometry"]])])) * GW_AREA_MULT) / total_occupied_space)
+            intersect_factors.append((turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(gw_regions["features"], lambda e: e["properties"]["elem_id"] == rg)["geometry"]])]))) / total_occupied_space)
             
+        def find_props_ordered(prop_name):
+            prop_arr = []
+            for rg in gw_rgs:
+                reg_feat = find_in(gw_regions["features"], lambda e: e["properties"]["id"] == rg)
+                prop_arr.append(reg_feat["properties"][prop_name])
+            return prop_arr
+
         def weight_by_prop(prop_name):
             prop_arr = []
             for rg in gw_rgs:
-                reg_feat = find_in(gw_regions["features"], lambda e: e["properties"]["elem_id"] == rg)
+                reg_feat = find_in(gw_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return weighted_avg_2D(prop_arr, intersect_factors)
 
         newprops["Groundwater"] = weight_by_prop("Groundwater")
+        newprops["GroundwaterVar"] = weighted_var_2D(find_props_ordered("Groundwater"), intersect_factors)
         newprops["GroundwaterAverage"] = avg_1D(newprops["Groundwater"])
         newprops["DURgs"] = demand_rgs
         newprops["GWRgs"] = gw_rgs
