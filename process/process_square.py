@@ -13,6 +13,84 @@ from turfpy.measurement import bbox as turf_bbox
 from turfpy.transformation import intersect as turf_intersect
 from geojson import Feature, FeatureCollection
 
+def binCoord(lat, lon, deg):
+    return math.floor(lat / deg) * deg, math.floor(lon / deg) * deg
+
+def kmToLatDeg(dist):
+    return dist / 111.1
+
+def hexSideToSquareSide(res):
+    return h3.edge_length(res, 'km') * 2
+
+def resToDegSide(res):
+    return kmToLatDeg(hexSideToSquareSide(res))
+
+# https://stackoverflow.com/a/8595991
+def truncStr(num):
+    return '%.3f'%(num)
+
+def geo_to_h3(lat, lon, res):
+    kmSqSide = hexSideToSquareSide(res)
+    latSqSide = kmToLatDeg(kmSqSide)
+    latBin, lonBin = binCoord(lat, lon, latSqSide)
+    return f"{truncStr(latBin)}/{truncStr(lonBin)}/{res}"
+
+def h3_to_geo_corner(h3str):
+    strLat, strLon, _ = h3str.split('/')
+    return float(strLat), float(strLon)
+
+def h3_to_res(h3str):
+    strLat, strLon, res = h3str.split('/')
+    return int(res)
+
+# distance in deg
+def h3_distance(idCenter, idCorner):
+    centerLat, centerLon = h3_to_geo_corner(idCenter)
+    cornerLat, cornerLon = h3_to_geo_corner(idCorner)
+    distLat = centerLat - cornerLat
+    distLon = centerLon - cornerLon
+    return math.sqrt(distLat ** 2 + distLon ** 2)
+
+# radius in deg, side = radius * 2
+def k_ring(idCenter, radius):
+
+    sqs = set()
+    res = h3_to_res(idCenter)
+    lat, lon = h3_to_geo_corner(idCenter)
+
+    sideLen = resToDegSide(res)
+
+    sqLenHalf = radius
+    numSquaresHalf = math.ceil(sqLenHalf / sideLen)
+
+    for dx in range(-numSquaresHalf, numSquaresHalf + 2):
+        for dy in range(-numSquaresHalf, numSquaresHalf + 2):
+            sqs.add(geo_to_h3(lat + dy * sideLen, lon + dx * sideLen, res))
+
+    return list(sqs)
+
+def h3_to_bounds(hex):
+    lat, lon = h3_to_geo_corner(hex)
+    res = h3_to_res(hex)
+    sideDeg = resToDegSide(res)
+    return [
+        (lon, lat + sideDeg),
+        (lon + sideDeg, lat + sideDeg),
+        (lon + sideDeg, lat),
+        (lon, lat),
+        (lon, lat + sideDeg),
+    ]
+
+def h3_set_to_multi_polygon(hexes, isgeo):
+    feats = []
+    for hex in hexes:
+        feats.append(h3_to_bounds(hex))
+    return [feats]
+
+    # center = geo_to_h3(center_lat, center_lon, res)
+    # radius = h3_distance(center, geo_to_h3(bbox[1], bbox[0], res))
+    # hexes = k_ring(center, radius)
+
 MMIN = 5
 MMAX = 6
 
@@ -114,16 +192,16 @@ def polygon_to_cells(geometry, res):
     bbox = turf_bbox(geometry)
     center_lon = bbox[0] + (bbox[2] - bbox[0]) / 2
     center_lat = bbox[1] + (bbox[3] - bbox[1]) / 2
-    center = h3.geo_to_h3(center_lat, center_lon, res)
-    radius = h3.h3_distance(center, h3.geo_to_h3(bbox[1], bbox[0], res))
-    hexes = h3.k_ring(center, radius)
+    center = geo_to_h3(center_lat, center_lon, res)
+    radius = h3_distance(center, geo_to_h3(bbox[1], bbox[0], res))
+    hexes = k_ring(center, radius)
 
     cells = []
 
     for hx in hexes:
         hxfeat = {
                 "type": "MultiPolygon",
-                "coordinates": h3.h3_set_to_multi_polygon([hx], True)
+                "coordinates": h3_set_to_multi_polygon([hx], True)
             }
         intsection = turf_intersect([hxfeat, geometry])
         if intsection:
@@ -133,72 +211,6 @@ def polygon_to_cells(geometry, res):
 
 def find_in(arr, cond):
     return next(elem for elem in arr if cond(elem))
-
-# https://gis.stackexchange.com/a/281676
-def get_neighbors(feats):    
-    gdf = geopandas.GeoDataFrame.from_features(feats)
-
-    gdf["NEIGHBORS"] = None  
-
-    for index, region in gdf.iterrows():   
-
-        # get 'not disjoint' countries
-        neighbors = gdf[~gdf.geometry.disjoint(region.geometry)].DU_ID.tolist()
-
-        # remove own duid of the region from the list
-        neighbors = [ duid for duid in neighbors if region.DU_ID != duid ]
-
-        # add duids of neighbors as NEIGHBORS value
-        gdf.at[index, "NEIGHBORS"] = ",".join(neighbors)
-
-    neighbor_map = gdf[['DU_ID', 'NEIGHBORS']]
-
-    neighbor_map = pandas.Series(neighbor_map.NEIGHBORS.values,index=neighbor_map.DU_ID).to_dict()
-
-    for duid in neighbor_map:
-        neighbor_map[duid] = neighbor_map[duid].split(',')
-
-    return neighbor_map
-
-def get_moran_i_1D(rgs, neighbors, weights):
-    # get mean
-    mean = weighted_avg_1D(rgs, weights)
-    # get variance
-    variance = sum([(x - mean) ** 2 for x in rgs])
-    W = sum([len(ns) for ns in neighbors])
-
-    # if there is no variance or there are no neighbors, assume perfect clustering
-    if variance == 0 or W == 0:
-        return 1
-    
-    # init sigma
-    sigma = 0
-    # loop through regions in hex
-    for rg_i, neighbor_rgs in zip(rgs, neighbors):
-    #     for each neighbor
-        for rg_j_key in neighbor_rgs:
-            rg_j = rgs[rg_j_key]
-    #     - first check if it's in hex
-    #     - if it is, sigma += (x_i - mean) * (x_j - mean)
-            sigma += (rg_i - mean) * (rg_j - mean)
-    # * N / W / variance
-    N = len(rgs)
-
-    mi = sigma * N / W / variance
-
-
-    return mi
-
-
-def get_moran_i_2D(rgs, neighbors, weights):    
-    mi_arr = []
-
-    if len(rgs) != 0:
-        for j in range(0, len(rgs[0])):
-            # round to truncate numbers in final data file
-            mi_arr.append(int(round(get_moran_i_1D([a[j] for a in rgs], neighbors, weights))))
-
-    return mi_arr
 
 
 def truncate_demand_data(demand_file):
@@ -301,8 +313,6 @@ for feat in feats:
 
 demand_regions["features"] = list(demand_regions_by_id.values())
 
-neighbor_map = get_neighbors(demand_regions["features"])
-
 # Normalize datas to area
 
 for region in demand_regions["features"]:
@@ -377,7 +387,7 @@ for res in range(MMIN, MMAX + 1):
         
         hxfeat = {
                 "type": "MultiPolygon",
-                "coordinates": h3.h3_set_to_multi_polygon([hx], True)
+                "coordinates": h3_set_to_multi_polygon([hx], True)
             }
 
         intersect_factors = []
@@ -487,7 +497,7 @@ for res in range(MMIN, MMAX + 1):
 
 # Write JSON
 
-with open(f"hex_{MMIN}_{MMAX}.json", "w") as outfile:
+with open(f"square_{MMIN}_{MMAX}.json", "w") as outfile:
     ujson.dump(final_hex_json, outfile)
 
 with open(f"demand_geo.json", "w") as outfile:
