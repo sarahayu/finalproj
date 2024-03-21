@@ -24,13 +24,15 @@ SCENS = [
 DU_AREA_MULT = 1 / 6e8
 GW_AREA_MULT = 1 / 6e7
 
-def avg_1D(arr): 
+
+def avg_1D(arr):
     if len(arr) == 0:
         return 0
-    return reduce(lambda a, b: a + b, arr) / len(arr) 
+    return reduce(lambda a, b: a + b, arr) / len(arr)
+
 
 def avg_2D(arr):
-    
+
     avg_arr = []
 
     if len(arr) != 0:
@@ -38,14 +40,16 @@ def avg_2D(arr):
             # round to truncate numbers in final data file
             avg_arr.append(int(round(avg_1D([a[j] for a in arr]))))
 
+
 def var_1D(arr):
     if len(arr) == 0:
         return 0
-    
+
     mean = avg_1D(arr)
     return sum([(x - mean) ** 2 for x in arr]) / len(arr)
 
-def var_2D(rgs):    
+
+def var_2D(rgs):
     mi_arr = []
 
     if len(rgs) != 0:
@@ -55,20 +59,23 @@ def var_2D(rgs):
 
     return mi_arr
 
+
 def weighted_var_1D(arr, weights):
     if len(arr) == 0:
         return 0
-    
+
     mean = weighted_avg_1D(arr, weights)
     return sum([(x - mean) ** 2 for x in arr]) / len(arr)
 
-def weighted_var_2D(rgs, weights):    
+
+def weighted_var_2D(rgs, weights):
     mi_arr = []
 
     if len(rgs) != 0:
         for j in range(0, len(rgs[0])):
             # round to truncate numbers in final data file
-            mi_arr.append(int(round(weighted_var_1D([a[j] for a in rgs], weights))))
+            mi_arr.append(
+                int(round(weighted_var_1D([a[j] for a in rgs], weights))))
 
     return mi_arr
 
@@ -76,16 +83,19 @@ def weighted_var_2D(rgs, weights):
 def weighted_avg_1D(arr, weights):
     return sum([a * w for a, w in zip(arr, weights)])
 
+
 def weighted_avg_2D(arr, weights):
-    
+
     avg_arr = []
 
     if len(arr) != 0:
         for j in range(0, len(arr[0])):
             # round to truncate numbers in final data file
-            avg_arr.append(int(round(weighted_avg_1D([a[j] for a in arr], weights))))
+            avg_arr.append(
+                int(round(weighted_avg_1D([a[j] for a in arr], weights))))
 
     return avg_arr
+
 
 def weighted_mode(arr, weights):
     keeptrack = {}
@@ -93,9 +103,15 @@ def weighted_mode(arr, weights):
         if a not in keeptrack:
             keeptrack[a] = 0
         keeptrack[a] += w
-    
-    sorteds = [k for k, _ in sorted(keeptrack.items(), key=lambda item: item[1], reverse=True)]
+
+    sorteds = [
+        k for k,
+        _ in sorted(
+            keeptrack.items(),
+            key=lambda item: item[1],
+            reverse=True)]
     return sorteds
+
 
 def id_to_val(id_str):
     last_part = id_str.rstrip(string.digits)[-2:]
@@ -109,7 +125,10 @@ def id_to_val(id_str):
         return 3
     assert False, f"Unknown id: {id_str}"
 
-# version of h3.polygonToCells that includes all hexagons covering polygon, not just hexagons with its centroid in the polygon
+# version of h3.polygonToCells that includes all hexagons covering
+# polygon, not just hexagons with its centroid in the polygon
+
+
 def polygon_to_cells(geometry, res):
     bbox = turf_bbox(geometry)
     center_lon = bbox[0] + (bbox[2] - bbox[0]) / 2
@@ -122,43 +141,49 @@ def polygon_to_cells(geometry, res):
 
     for hx in hexes:
         hxfeat = {
-                "type": "MultiPolygon",
-                "coordinates": h3.h3_set_to_multi_polygon([hx], True)
-            }
+            "type": "MultiPolygon",
+            "coordinates": h3.h3_set_to_multi_polygon([hx], True)
+        }
         intsection = turf_intersect([hxfeat, geometry])
         if intsection:
             cells.append(hx)
 
     return cells
 
+
 def find_in(arr, cond):
     return next(elem for elem in arr if cond(elem))
 
 # https://gis.stackexchange.com/a/281676
-def get_neighbors(feats):    
+
+
+def get_neighbors(feats):
     gdf = geopandas.GeoDataFrame.from_features(feats)
 
-    gdf["NEIGHBORS"] = None  
+    gdf["NEIGHBORS"] = None
 
-    for index, region in gdf.iterrows():   
+    for index, region in gdf.iterrows():
 
         # get 'not disjoint' countries
         neighbors = gdf[~gdf.geometry.disjoint(region.geometry)].DU_ID.tolist()
 
         # remove own duid of the region from the list
-        neighbors = [ duid for duid in neighbors if region.DU_ID != duid ]
+        neighbors = [duid for duid in neighbors if region.DU_ID != duid]
 
         # add duids of neighbors as NEIGHBORS value
         gdf.at[index, "NEIGHBORS"] = ",".join(neighbors)
 
     neighbor_map = gdf[['DU_ID', 'NEIGHBORS']]
 
-    neighbor_map = pandas.Series(neighbor_map.NEIGHBORS.values,index=neighbor_map.DU_ID).to_dict()
+    neighbor_map = pandas.Series(
+        neighbor_map.NEIGHBORS.values,
+        index=neighbor_map.DU_ID).to_dict()
 
     for duid in neighbor_map:
         neighbor_map[duid] = neighbor_map[duid].split(',')
 
     return neighbor_map
+
 
 def get_moran_i_1D(rgs, neighbors, weights):
     # get mean
@@ -167,15 +192,16 @@ def get_moran_i_1D(rgs, neighbors, weights):
     variance = sum([(x - mean) ** 2 for x in rgs])
     W = sum([len(ns) for ns in neighbors])
 
-    # if there is no variance or there are no neighbors, assume perfect clustering
+    # if there is no variance or there are no neighbors, assume perfect
+    # clustering
     if variance == 0 or W == 0:
         return 1
-    
+
     # init sigma
     sigma = 0
     # loop through regions in hex
     for rg_i, neighbor_rgs in zip(rgs, neighbors):
-    #     for each neighbor
+        #     for each neighbor
         for rg_j_key in neighbor_rgs:
             rg_j = rgs[rg_j_key]
     #     - first check if it's in hex
@@ -186,17 +212,17 @@ def get_moran_i_1D(rgs, neighbors, weights):
 
     mi = sigma * N / W / variance
 
-
     return mi
 
 
-def get_moran_i_2D(rgs, neighbors, weights):    
+def get_moran_i_2D(rgs, neighbors, weights):
     mi_arr = []
 
     if len(rgs) != 0:
         for j in range(0, len(rgs[0])):
             # round to truncate numbers in final data file
-            mi_arr.append(int(round(get_moran_i_1D([a[j] for a in rgs], neighbors, weights))))
+            mi_arr.append(
+                int(round(get_moran_i_1D([a[j] for a in rgs], neighbors, weights))))
 
     return mi_arr
 
@@ -207,17 +233,18 @@ def truncate_demand_data(demand_file):
             l = feats["properties"][k]
 
             if type(l) is list:
-                feats["properties"][k] = [int(round(a)) for a in l]                
+                feats["properties"][k] = [int(round(a)) for a in l]
             elif type(l) is dict:
                 for ll in l:
                     l[ll] = [int(round(a)) for a in l[ll]]
 
     return demand_file
 
+
 def truncate_gw_data(gw_file):
     for feats in gw_file["features"]:
         l = feats["properties"]["Groundwater"]
-        
+
         if type(l) is list:
             feats["properties"]["Groundwater"] = [int(round(a)) for a in l]
 
@@ -225,9 +252,11 @@ def truncate_gw_data(gw_file):
 
 # Load files (region and temporal)
 
+
 def correct_demand_data(demand_datas):
     for duid in demand_datas:
-        # turn map of values to a plain array, remove first element as it is trash
+        # turn map of values to a plain array, remove first element as it is
+        # trash
         demand_datas[duid] = list(demand_datas[duid].values())[1:]
 
         # sometimes data is screwed up
@@ -236,23 +265,34 @@ def correct_demand_data(demand_datas):
 
     return demand_datas
 
+
 def correct_gw_data(gw_geojson):
-    # turn map of values to a plain array, remove first and last element as it is trash, turn str to int
+    # turn map of values to a plain array, remove first and last element as it
+    # is trash, turn str to int
     for feat in gw_geojson["features"]:
-        feat["properties"]["Groundwater"] = [float(elem) for elem in list(feat["properties"]["Groundwater"].values())[1:-1] ]
+        feat["properties"]["Groundwater"] = [
+            float(elem) for elem in list(
+                feat["properties"]["Groundwater"].values())[
+                1:-1]]
 
     return gw_geojson
 
-demand_regions = ujson.load(urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/shapes/demand_units"))
-bl_unmet_demands = correct_demand_data(ujson.load(urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/unmetdemand")))
-bl_demands = correct_demand_data(ujson.load(urllib.request.urlopen("http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/demand")))
+
+demand_regions = ujson.load(urllib.request.urlopen(
+    "http://infovis.cs.ucdavis.edu/geospatial/api/shapes/demand_units"))
+bl_unmet_demands = correct_demand_data(ujson.load(urllib.request.urlopen(
+    "http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/unmetdemand")))
+bl_demands = correct_demand_data(ujson.load(urllib.request.urlopen(
+    "http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/CS3_BL/demand")))
 
 scen_unmet_demands = {}
 scen_demands = {}
 
 for scen in SCENS:
-    scen_unmet_demands[scen] = correct_demand_data(ujson.load(urllib.request.urlopen(f"http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/{scen}/unmetdemand")))
-    scen_demands[scen] = correct_demand_data(ujson.load(urllib.request.urlopen(f"http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/{scen}/demand")))
+    scen_unmet_demands[scen] = correct_demand_data(ujson.load(urllib.request.urlopen(
+        f"http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/{scen}/unmetdemand")))
+    scen_demands[scen] = correct_demand_data(ujson.load(urllib.request.urlopen(
+        f"http://infovis.cs.ucdavis.edu/geospatial/api/data/scenario/{scen}/demand")))
 
 gw_regions = correct_gw_data(ujson.load(open("baseline_groundwater.json")))
 
@@ -264,16 +304,16 @@ demand_regions_by_id = {}
 
 for feat in feats:
     duid = feat["properties"]["DU_ID"]
-    
+
     # duid can be null for some reason
     if not duid:
         continue
 
     # skip duid is not found in all datasets
     if duid not in bl_unmet_demands or \
-        duid not in bl_demands or \
-        any(duid not in scen_unmet_demands[scen] for scen in SCENS) or \
-        any(duid not in scen_demands[scen] for scen in SCENS):
+            duid not in bl_demands or \
+            any(duid not in scen_unmet_demands[scen] for scen in SCENS) or \
+            any(duid not in scen_demands[scen] for scen in SCENS):
         continue
 
     if duid not in demand_regions_by_id:
@@ -296,8 +336,9 @@ for feat in feats:
             newprops["Demand"][scen] = scen_demands[scen][duid]
 
         demand_regions_by_id[duid]["properties"] = newprops
-    
-    demand_regions_by_id[duid]["geometry"]["coordinates"].append(feat["geometry"]["coordinates"])
+
+    demand_regions_by_id[duid]["geometry"]["coordinates"].append(
+        feat["geometry"]["coordinates"])
 
 demand_regions["features"] = list(demand_regions_by_id.values())
 
@@ -310,12 +351,16 @@ for region in demand_regions["features"]:
 
     props = region["properties"]
 
-    props["UnmetDemandBaseline"] = [ elem / area for elem in region["properties"]["UnmetDemandBaseline"] ]
-    props["DemandBaseline"] = [ elem / area for elem in region["properties"]["DemandBaseline"] ]
+    props["UnmetDemandBaseline"] = [
+        elem / area for elem in region["properties"]["UnmetDemandBaseline"]]
+    props["DemandBaseline"] = [
+        elem / area for elem in region["properties"]["DemandBaseline"]]
 
     for scen in SCENS:
-        props["UnmetDemand"][scen] = [ elem / area for elem in region["properties"]["UnmetDemand"][scen] ]
-        props["Demand"][scen] = [ elem / area for elem in region["properties"]["Demand"][scen] ]
+        props["UnmetDemand"][scen] = [
+            elem / area for elem in region["properties"]["UnmetDemand"][scen]]
+        props["Demand"][scen] = [
+            elem / area for elem in region["properties"]["Demand"][scen]]
 
     # # save area because why not
     # props["Area"] = area
@@ -331,7 +376,8 @@ for region in gw_regions["features"]:
 
 # For each reses:
 #   Convert multipolygons to hexes (map of hexes -> array of DU_IDs and array of groundwaters)
-#   Aggregate info and scale to hex/(total region occupied by georegions) intersection, also attach info on arrays of DU_IDS and groundwaters
+# Aggregate info and scale to hex/(total region occupied by georegions)
+# intersection, also attach info on arrays of DU_IDS and groundwaters
 
 final_hex_json = {}
 
@@ -349,75 +395,84 @@ for res in range(MMIN, MMAX + 1):
                     "demand_rgs": [],
                     "gw_rgs": []
                 }
-            
+
             hex_to_regions[cell]["demand_rgs"].append(duid)
 
-            
     for region in gw_regions["features"]:
         elem_id = region["properties"]["elem_id"]
         geom = region["geometry"]
-        
+
         for cell in polygon_to_cells(geom, res):
             if cell not in hex_to_regions:
                 hex_to_regions[cell] = {
                     "demand_rgs": [],
                     "gw_rgs": []
                 }
-            
+
             hex_to_regions[cell]["gw_rgs"].append(elem_id)
 
     for hx in hex_to_regions:
         demand_rgs = hex_to_regions[hx]["demand_rgs"]
         gw_rgs = hex_to_regions[hx]["gw_rgs"]
 
-
         # make sure we have both demand and groundwater information in this hex
         if not (gw_rgs and demand_rgs):
             continue
-        
+
         hxfeat = {
-                "type": "MultiPolygon",
-                "coordinates": h3.h3_set_to_multi_polygon([hx], True)
-            }
+            "type": "MultiPolygon",
+            "coordinates": h3.h3_set_to_multi_polygon([hx], True)
+        }
 
         intersect_factors = []
-        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, demand_regions_by_id[rg]["geometry"]])])) for rg in demand_rgs]) * DU_AREA_MULT
+        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect(
+            [hxfeat, demand_regions_by_id[rg]["geometry"]])])) for rg in demand_rgs]) * DU_AREA_MULT
 
         for rg in demand_rgs:
-            intersect_factors.append((turf_area(FeatureCollection([turf_intersect([hxfeat, demand_regions_by_id[rg]["geometry"]])])) * DU_AREA_MULT) / total_occupied_space)
+            intersect_factors.append((turf_area(FeatureCollection([turf_intersect(
+                [hxfeat, demand_regions_by_id[rg]["geometry"]])])) * DU_AREA_MULT) / total_occupied_space)
 
         newprops = {}
 
         def find_props_ordered(prop_name):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    demand_regions["features"],
+                    lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return prop_arr
 
         def weight_by_prop(prop_name):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    demand_regions["features"],
+                    lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return weighted_avg_2D(prop_arr, intersect_factors)
 
+        newprops["UnmetDemandBaseline"] = weighted_avg_2D(
+            find_props_ordered("UnmetDemandBaseline"), intersect_factors)
+        newprops["DemandBaseline"] = weighted_avg_2D(
+            find_props_ordered("DemandBaseline"), intersect_factors)
 
-        newprops["UnmetDemandBaseline"] = weighted_avg_2D(find_props_ordered("UnmetDemandBaseline"), intersect_factors)
-        newprops["DemandBaseline"] = weighted_avg_2D(find_props_ordered("DemandBaseline"), intersect_factors)
-        
-        newprops["UnmetDemandBaselineAverage"] = avg_1D(newprops["UnmetDemandBaseline"])
+        newprops["UnmetDemandBaselineAverage"] = avg_1D(
+            newprops["UnmetDemandBaseline"])
         newprops["DemandBaselineAverage"] = avg_1D(newprops["DemandBaseline"])
-        
+
         # ud_arr = find_props_ordered("UnmetDemandBaseline")
         # neighbor_arr = [
         #     [demand_rgs.index(n) for n in neighbor_map[rg] if n in demand_rgs] for rg in demand_rgs
         # ]
 
-        newprops["UnmetDemandBaselineVar"] = weighted_var_2D(find_props_ordered("UnmetDemandBaseline"), intersect_factors)
-        newprops["DemandBaselineVar"] = weighted_var_2D(find_props_ordered("DemandBaseline"), intersect_factors)
+        newprops["UnmetDemandBaselineVar"] = weighted_var_2D(
+            find_props_ordered("UnmetDemandBaseline"), intersect_factors)
+        newprops["DemandBaselineVar"] = weighted_var_2D(
+            find_props_ordered("DemandBaseline"), intersect_factors)
 
-        newprops["LandUse"] = weighted_mode(find_props_ordered("LandUse"), intersect_factors)
+        newprops["LandUse"] = weighted_mode(
+            find_props_ordered("LandUse"), intersect_factors)
 
         newprops["UnmetDemand"] = {}
         newprops["Demand"] = {}
@@ -426,56 +481,68 @@ for res in range(MMIN, MMAX + 1):
         newprops["UnmetDemandAverage"] = {}
         newprops["DemandAverage"] = {}
 
-
         def find_props_scen_ordered(prop_name, scen):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    demand_regions["features"],
+                    lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name][scen])
             return prop_arr
-        
+
         def weight_by_prop_scen(prop_name, scen):
             prop_arr = []
             for rg in demand_rgs:
-                reg_feat = find_in(demand_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    demand_regions["features"],
+                    lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name][scen])
             return weighted_avg_2D(prop_arr, intersect_factors)
 
-
         for scen in SCENS:
-            newprops["UnmetDemand"][scen] = weight_by_prop_scen("UnmetDemand", scen)
+            newprops["UnmetDemand"][scen] = weight_by_prop_scen(
+                "UnmetDemand", scen)
             newprops["Demand"][scen] = weight_by_prop_scen("Demand", scen)
-            newprops["UnmetDemandVar"][scen] = weighted_var_2D(find_props_scen_ordered("UnmetDemand", scen), intersect_factors)
-            newprops["DemandVar"][scen] = weighted_var_2D(find_props_scen_ordered("Demand", scen), intersect_factors)
-                
-            newprops["UnmetDemandAverage"][scen] = avg_1D(newprops["UnmetDemand"][scen])
+            newprops["UnmetDemandVar"][scen] = weighted_var_2D(
+                find_props_scen_ordered("UnmetDemand", scen), intersect_factors)
+            newprops["DemandVar"][scen] = weighted_var_2D(
+                find_props_scen_ordered("Demand", scen), intersect_factors)
+
+            newprops["UnmetDemandAverage"][scen] = avg_1D(
+                newprops["UnmetDemand"][scen])
             newprops["DemandAverage"][scen] = avg_1D(newprops["Demand"][scen])
 
-
         # PUT BACK IN  * GW_AREA_MULT IF NORMALIZING GW (see L:390)
-        
+
         intersect_factors = []
-        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(gw_regions["features"], lambda e: e["properties"]["id"] == rg)["geometry"]])])) for rg in gw_rgs])
+        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(
+            gw_regions["features"], lambda e: e["properties"]["id"] == rg)["geometry"]])])) for rg in gw_rgs])
 
         for rg in gw_rgs:
-            intersect_factors.append((turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(gw_regions["features"], lambda e: e["properties"]["id"] == rg)["geometry"]])]))) / total_occupied_space)
-            
+            intersect_factors.append((turf_area(FeatureCollection([turf_intersect([hxfeat, find_in(
+                gw_regions["features"], lambda e: e["properties"]["id"] == rg)["geometry"]])]))) / total_occupied_space)
+
         def find_props_ordered(prop_name):
             prop_arr = []
             for rg in gw_rgs:
-                reg_feat = find_in(gw_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    gw_regions["features"],
+                    lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return prop_arr
 
         def weight_by_prop(prop_name):
             prop_arr = []
             for rg in gw_rgs:
-                reg_feat = find_in(gw_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    gw_regions["features"],
+                    lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return weighted_avg_2D(prop_arr, intersect_factors)
 
         newprops["Groundwater"] = weight_by_prop("Groundwater")
-        newprops["GroundwaterVar"] = weighted_var_2D(find_props_ordered("Groundwater"), intersect_factors)
+        newprops["GroundwaterVar"] = weighted_var_2D(
+            find_props_ordered("Groundwater"), intersect_factors)
         newprops["GroundwaterAverage"] = avg_1D(newprops["Groundwater"])
         newprops["DURgs"] = demand_rgs
         newprops["GWRgs"] = gw_rgs
