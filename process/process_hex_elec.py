@@ -162,6 +162,8 @@ for region in county_regions["features"]:
     props = region["properties"]
     props["id"] = props["GEOID"]
     area = props["area"] / 1e6 * DU_AREA_MULT
+    # props["PoCCount"] = (props["county_subdivision_dec_Total population"] - props["county_subdivision_dec_White"]) / area
+    props["PoCCount"] = 100 - props["county_subdivision_dec_Percent White"]
 
     props["Population per Sqkm"] = props["county_subdivision_dec_Total population"] / area
 
@@ -170,6 +172,9 @@ for region in county_regions["features"]:
 for region in precinct_regions["features"]:
     props = region["properties"]
     props["id"] = props["GEOID"]
+    area = turf_area(FeatureCollection([region])) / 1e6 * GW_AREA_MULT
+    # props["DemLeadCount"] = (props["votes_dem"] - props["votes_rep"]) / area
+    props["DemLeadCount"] = props["pct_dem_lead"] if props["pct_dem_lead"] is not None else 0
 
     precinct_regions_by_id[props["GEOID"]] = region
 
@@ -229,6 +234,12 @@ for res in range(MMIN, MMAX + 1):
         for rg in county_rgs:
             intersect_factors.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])])) * county_regions_by_id[rg]["properties"]["Population per Sqkm"] * DU_AREA_MULT) / total_occupied_space) if total_occupied_space > 0 else 0 )
 
+        intersect_factors2 = []
+        total_occupied_space2 = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])])) for rg in county_rgs]) * DU_AREA_MULT
+
+        for rg in county_rgs:
+            intersect_factors2.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])])) * DU_AREA_MULT) / total_occupied_space2) if total_occupied_space2 > 0 else 0 )
+
         newprops = {}
 
         def find_props_ordered(prop_name):
@@ -246,17 +257,26 @@ for res in range(MMIN, MMAX + 1):
             return weighted_avg_1D(prop_arr, intersect_factors)
 
 
-        newprops["PopSqKm"] = weighted_avg_1D(find_props_ordered("Population per Sqkm"), intersect_factors)
-        newprops["PopSqKmVar"] = weighted_var_1D(find_props_ordered("Population per Sqkm"), intersect_factors)
+        newprops["Pop"] = weighted_avg_1D(find_props_ordered("county_subdivision_dec_Total population"), intersect_factors2)
+        newprops["PopVar"] = weighted_var_1D(find_props_ordered("county_subdivision_dec_Total population"), intersect_factors2)
+
+        newprops["PopSqKm"] = weighted_avg_1D(find_props_ordered("Population per Sqkm"), intersect_factors2)
+        newprops["PopSqKmVar"] = weighted_var_1D(find_props_ordered("Population per Sqkm"), intersect_factors2)
         
-        newprops["PercWhite"] = weight_by_prop("county_subdivision_dec_Percent White")
-        newprops["PercWhiteVar"] = weighted_var_1D(find_props_ordered("county_subdivision_dec_Percent White"), intersect_factors)
+        newprops["PoC"] = weighted_avg_1D(find_props_ordered("PoCCount"), intersect_factors)
+        newprops["PoCVar"] = weighted_var_1D(find_props_ordered("PoCCount"), intersect_factors)
         
         intersect_factors = []
         total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])])) * precinct_regions_by_id[rg]["properties"]["votes_per_sqkm"] for rg in precinct_rgs])
 
         for rg in precinct_rgs:
             intersect_factors.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])])) * precinct_regions_by_id[rg]["properties"]["votes_per_sqkm"]) / total_occupied_space) if total_occupied_space > 0 else 0)
+        
+        intersect_factors2 = []
+        total_occupied_space2 = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])])) for rg in precinct_rgs])
+
+        for rg in precinct_rgs:
+            intersect_factors2.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])]))) / total_occupied_space2) if total_occupied_space2 > 0 else 0)
             
         def find_props_ordered(prop_name):
             prop_arr = []
@@ -275,9 +295,12 @@ for res in range(MMIN, MMAX + 1):
                 prop_arr.append(reg_feat["properties"][prop_name])
             return weighted_avg_1D(prop_arr, intersect_factors)
 
-        newprops["DemLead"] = weight_by_prop("pct_dem_lead")
-        newprops["VotesPerSqKm"] = weight_by_prop("votes_per_sqkm")
-        newprops["TurnoutPerSqKm"] = newprops["VotesPerSqKm"] / newprops["PopSqKm"] * 100
+        newprops["DemLead"] = weighted_avg_1D(find_props_ordered("DemLeadCount"), intersect_factors)
+        newprops["DemLeadVar"] = weighted_var_1D(find_props_ordered("DemLeadCount"), intersect_factors)
+
+        # newprops["DemLead"] = weight_by_prop("pct_dem_lead")
+        # newprops["VotesPerSqKm"] = weight_by_prop("votes_per_sqkm")
+        # newprops["TurnoutPerSqKm"] = newprops["VotesPerSqKm"] / newprops["PopSqKm"] * 100
         
         newprops["CountyRgs"] = county_rgs
         newprops["PrecinctRgs"] = precinct_rgs
