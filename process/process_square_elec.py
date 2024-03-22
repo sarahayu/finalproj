@@ -13,21 +13,28 @@ from turfpy.measurement import bbox as turf_bbox
 from turfpy.transformation import intersect as turf_intersect
 from geojson import Feature, FeatureCollection
 
+
 def binCoord(lat, lon, deg):
     return math.floor(lat / deg) * deg, math.floor(lon / deg) * deg
+
 
 def kmToLatDeg(dist):
     return dist / 111.1
 
+
 def hexSideToSquareSide(res):
     return h3.edge_length(res, 'km') * 2
+
 
 def resToDegSide(res):
     return kmToLatDeg(hexSideToSquareSide(res))
 
 # https://stackoverflow.com/a/8595991
+
+
 def truncStr(num):
-    return '%.3f'%(num)
+    return '%.3f' % (num)
+
 
 def geo_to_h3(lat, lon, res):
     kmSqSide = hexSideToSquareSide(res)
@@ -35,15 +42,19 @@ def geo_to_h3(lat, lon, res):
     latBin, lonBin = binCoord(lat, lon, latSqSide)
     return f"{truncStr(latBin)}/{truncStr(lonBin)}/{res}"
 
+
 def h3_to_geo_corner(h3str):
     strLat, strLon, _ = h3str.split('/')
     return float(strLat), float(strLon)
+
 
 def h3_to_res(h3str):
     strLat, strLon, res = h3str.split('/')
     return int(res)
 
 # distance in deg
+
+
 def h3_distance(idCenter, idCorner):
     centerLat, centerLon = h3_to_geo_corner(idCenter)
     cornerLat, cornerLon = h3_to_geo_corner(idCorner)
@@ -52,6 +63,8 @@ def h3_distance(idCenter, idCorner):
     return math.sqrt(distLat ** 2 + distLon ** 2)
 
 # radius in deg, side = radius * 2
+
+
 def k_ring(idCenter, radius):
 
     sqs = set()
@@ -69,6 +82,7 @@ def k_ring(idCenter, radius):
 
     return list(sqs)
 
+
 def h3_to_bounds(hex):
     lat, lon = h3_to_geo_corner(hex)
     res = h3_to_res(hex)
@@ -81,6 +95,7 @@ def h3_to_bounds(hex):
         (lon, lat + sideDeg),
     ]
 
+
 def h3_set_to_multi_polygon(hexes, isgeo):
     feats = []
     for hex in hexes:
@@ -91,6 +106,7 @@ def h3_set_to_multi_polygon(hexes, isgeo):
     # radius = h3_distance(center, geo_to_h3(bbox[1], bbox[0], res))
     # hexes = k_ring(center, radius)
 
+
 MMIN = 3
 MMAX = 4
 
@@ -99,16 +115,18 @@ SCENS = [
     "bl_h000",
 ]
 
-DU_AREA_MULT = 1 # / 6e8
-GW_AREA_MULT = 1 # / 6e7
+DU_AREA_MULT = 1  # / 6e8
+GW_AREA_MULT = 1  # / 6e7
 
-def avg_1D(arr): 
+
+def avg_1D(arr):
     if len(arr) == 0:
         return 0
-    return reduce(lambda a, b: a + b, arr) / len(arr) 
+    return reduce(lambda a, b: a + b, arr) / len(arr)
+
 
 def avg_2D(arr):
-    
+
     avg_arr = []
 
     if len(arr) != 0:
@@ -116,14 +134,16 @@ def avg_2D(arr):
             # round to truncate numbers in final data file
             avg_arr.append(int(round(avg_1D([a[j] for a in arr]))))
 
+
 def var_1D(arr):
     if len(arr) == 0:
         return 0
-    
+
     mean = avg_1D(arr)
     return sum([(x - mean) ** 2 for x in arr]) / len(arr)
 
-def var_2D(rgs):    
+
+def var_2D(rgs):
     mi_arr = []
 
     if len(rgs) != 0:
@@ -133,20 +153,23 @@ def var_2D(rgs):
 
     return mi_arr
 
+
 def weighted_var_1D(arr, weights):
     if len(arr) == 0:
         return 0
-    
+
     mean = weighted_avg_1D(arr, weights)
     return sum([(x - mean) ** 2 for x in arr]) / len(arr)
 
-def weighted_var_2D(rgs, weights):    
+
+def weighted_var_2D(rgs, weights):
     mi_arr = []
 
     if len(rgs) != 0:
         for j in range(0, len(rgs[0])):
             # round to truncate numbers in final data file
-            mi_arr.append(int(round(weighted_var_1D([a[j] for a in rgs], weights))))
+            mi_arr.append(
+                int(round(weighted_var_1D([a[j] for a in rgs], weights))))
 
     return mi_arr
 
@@ -154,16 +177,19 @@ def weighted_var_2D(rgs, weights):
 def weighted_avg_1D(arr, weights):
     return sum([a * w if a is not None else 0 for a, w in zip(arr, weights)])
 
+
 def weighted_avg_2D(arr, weights):
-    
+
     avg_arr = []
 
     if len(arr) != 0:
         for j in range(0, len(arr[0])):
             # round to truncate numbers in final data file
-            avg_arr.append(int(round(weighted_avg_1D([a[j] for a in arr], weights))))
+            avg_arr.append(
+                int(round(weighted_avg_1D([a[j] for a in arr], weights))))
 
     return avg_arr
+
 
 def weighted_mode(arr, weights):
     keeptrack = {}
@@ -171,9 +197,11 @@ def weighted_mode(arr, weights):
         if a not in keeptrack:
             keeptrack[a] = 0
         keeptrack[a] += w
-    
-    sorteds = [k for k, _ in sorted(keeptrack.items(), key=lambda item: item[1], reverse=True)]
+
+    sorteds = [k for k, _ in sorted(
+        keeptrack.items(), key=lambda item: item[1], reverse=True)]
     return sorteds
+
 
 def id_to_val(id_str):
     last_part = id_str.rstrip(string.digits)[-2:]
@@ -188,6 +216,8 @@ def id_to_val(id_str):
     assert False, f"Unknown id: {id_str}"
 
 # version of polygonToCells that includes all hexagons covering polygon, not just hexagons with its centroid in the polygon
+
+
 def polygon_to_cells(geometry, res):
     bbox = turf_bbox(geometry)
     center_lon = bbox[0] + (bbox[2] - bbox[0]) / 2
@@ -200,14 +230,15 @@ def polygon_to_cells(geometry, res):
 
     for hx in hexes:
         hxfeat = {
-                "type": "MultiPolygon",
-                "coordinates": h3_set_to_multi_polygon([hx], True)
-            }
+            "type": "MultiPolygon",
+            "coordinates": h3_set_to_multi_polygon([hx], True)
+        }
         intsection = turf_intersect([hxfeat, geometry])
         if intsection:
             cells.append(hx)
 
     return cells
+
 
 def find_in(arr, cond):
     return next(elem for elem in arr if cond(elem))
@@ -219,14 +250,15 @@ def truncate_data(datafile):
             l = feats["properties"][k]
 
             if type(l) is list:
-                feats["properties"][k] = [int(round(a)) for a in l]                
+                feats["properties"][k] = [int(round(a)) for a in l]
             elif type(l) is dict:
                 for ll in l:
                     l[ll] = [int(round(a)) for a in l[ll]]
 
     return datafile
 
-# Load files 
+# Load files
+
 
 county_regions = ujson.load(open("county_subdiv_simple.json"))
 precinct_regions = ujson.load(open("precinct_geo_simple.json"))
@@ -271,7 +303,7 @@ for res in range(MMIN, MMAX + 1):
                     "precinct_rgs": [],
                     "county_rgs": []
                 }
-            
+
             hex_to_regions[cell]["county_rgs"].append(id)
 
     for region in precinct_regions["features"]:
@@ -284,69 +316,79 @@ for res in range(MMIN, MMAX + 1):
                     "precinct_rgs": [],
                     "county_rgs": []
                 }
-            
+
             hex_to_regions[cell]["precinct_rgs"].append(id)
 
     for hx in hex_to_regions:
         county_rgs = hex_to_regions[hx]["county_rgs"]
         precinct_rgs = hex_to_regions[hx]["precinct_rgs"]
 
-
         # make sure we have both demand and groundwater information in this hex
         if not (precinct_rgs and county_rgs):
             continue
-        
+
         hxfeat = {
-                "type": "MultiPolygon",
-                "coordinates": h3_set_to_multi_polygon([hx], True)
-            }
+            "type": "MultiPolygon",
+            "coordinates": h3_set_to_multi_polygon([hx], True)
+        }
 
         intersect_factors = []
-        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])])) * county_regions_by_id[rg]["properties"]["Population per Sqkm"] for rg in county_rgs]) * DU_AREA_MULT
+        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])]))
+                                   * county_regions_by_id[rg]["properties"]["Population per Sqkm"] for rg in county_rgs]) * DU_AREA_MULT
 
         for rg in county_rgs:
-            intersect_factors.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])])) * county_regions_by_id[rg]["properties"]["Population per Sqkm"] * DU_AREA_MULT) / total_occupied_space) if total_occupied_space > 0 else 0 )
+            intersect_factors.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, county_regions_by_id[rg]["geometry"]])])) *
+                                     county_regions_by_id[rg]["properties"]["Population per Sqkm"] * DU_AREA_MULT) / total_occupied_space) if total_occupied_space > 0 else 0)
 
         newprops = {}
 
         def find_props_ordered(prop_name):
             prop_arr = []
             for rg in county_rgs:
-                reg_feat = find_in(county_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    county_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return prop_arr
 
         def weight_by_prop(prop_name):
             prop_arr = []
             for rg in county_rgs:
-                reg_feat = find_in(county_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    county_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return weighted_avg_1D(prop_arr, intersect_factors)
 
+        newprops["PopSqKm"] = weighted_avg_1D(
+            find_props_ordered("Population per Sqkm"), intersect_factors)
+        newprops["PopSqKmVar"] = weighted_var_1D(
+            find_props_ordered("Population per Sqkm"), intersect_factors)
 
-        newprops["PopSqKm"] = weighted_avg_1D(find_props_ordered("Population per Sqkm"), intersect_factors)
-        newprops["PopSqKmVar"] = weighted_var_1D(find_props_ordered("Population per Sqkm"), intersect_factors)
-        
-        newprops["PercWhite"] = weight_by_prop("county_subdivision_dec_Percent White")
-        newprops["PercWhiteVar"] = weighted_var_1D(find_props_ordered("county_subdivision_dec_Percent White"), intersect_factors)
-        
+        newprops["PercWhite"] = weight_by_prop(
+            "county_subdivision_dec_Percent White")
+        newprops["PercWhiteVar"] = weighted_var_1D(find_props_ordered(
+            "county_subdivision_dec_Percent White"), intersect_factors)
+
         intersect_factors = []
-        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])])) * precinct_regions_by_id[rg]["properties"]["votes_per_sqkm"] for rg in precinct_rgs])
+        total_occupied_space = sum([turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])]))
+                                   * precinct_regions_by_id[rg]["properties"]["votes_per_sqkm"] for rg in precinct_rgs])
 
         for rg in precinct_rgs:
-            intersect_factors.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])])) * precinct_regions_by_id[rg]["properties"]["votes_per_sqkm"]) / total_occupied_space) if total_occupied_space > 0 else 0)
-            
+            intersect_factors.append(((turf_area(FeatureCollection([turf_intersect([hxfeat, precinct_regions_by_id[rg]["geometry"]])]))
+                                     * precinct_regions_by_id[rg]["properties"]["votes_per_sqkm"]) / total_occupied_space) if total_occupied_space > 0 else 0)
+
         def find_props_ordered(prop_name):
             prop_arr = []
             for rg in precinct_rgs:
-                reg_feat = find_in(precinct_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    precinct_regions["features"], lambda e: e["properties"]["id"] == rg)
                 prop_arr.append(reg_feat["properties"][prop_name])
             return prop_arr
 
         def weight_by_prop(prop_name):
             prop_arr = []
             for rg in precinct_rgs:
-                reg_feat = find_in(precinct_regions["features"], lambda e: e["properties"]["id"] == rg)
+                reg_feat = find_in(
+                    precinct_regions["features"], lambda e: e["properties"]["id"] == rg)
                 # if reg_feat["properties"][prop_name] is None:
                 #     print(rg)
                 #     print(reg_feat["properties"])
@@ -355,8 +397,9 @@ for res in range(MMIN, MMAX + 1):
 
         newprops["DemLead"] = weight_by_prop("pct_dem_lead")
         newprops["VotesPerSqKm"] = weight_by_prop("votes_per_sqkm")
-        newprops["TurnoutPerSqKm"] = newprops["VotesPerSqKm"] / newprops["PopSqKm"] * 100
-        
+        newprops["TurnoutPerSqKm"] = newprops["VotesPerSqKm"] / \
+            newprops["PopSqKm"] * 100
+
         newprops["CountyRgs"] = county_rgs
         newprops["PrecinctRgs"] = precinct_rgs
 
