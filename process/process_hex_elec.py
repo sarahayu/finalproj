@@ -159,9 +159,9 @@ precinct_regions_by_id = {}
 # County population density
 
 for region in county_regions["features"]:
-    area = props["area"] / 1e6
-
     props = region["properties"]
+    
+    area = props["area"] / 1e6
     props["id"] = props["GEOID"]
     props["PoCCount"] = 100 - props["county_subdivision_dec_Percent White"]
     props["Population per Sqkm"] = props["county_subdivision_dec_Total population"] / area
@@ -169,9 +169,9 @@ for region in county_regions["features"]:
     county_regions_by_id[props["GEOID"]] = region
 
 for region in precinct_regions["features"]:
-    area = turf_area(FeatureCollection([region])) / 1e6
-
     props = region["properties"]
+
+    area = turf_area(FeatureCollection([region])) / 1e6
     props["id"] = props["GEOID"]
     props["DemLeadCount"] = props["pct_dem_lead"] if props["pct_dem_lead"] is not None else 0
 
@@ -270,10 +270,10 @@ for res in range(MMIN, MMAX + 1):
                 prop_arr.append(reg_feat["properties"][prop_name])
             return prop_arr
 
-        newprops["Pop"] = weighted_avg_1D(find_props_ordered(
-            "county_subdivision_dec_Total population"), weights_spatial)
-        newprops["PopVar"] = weighted_var_1D(find_props_ordered(
-            "county_subdivision_dec_Total population"), weights_spatial)
+        # newprops["Pop"] = weighted_avg_1D(find_props_ordered(
+        #     "county_subdivision_dec_Total population"), weights_spatial)
+        # newprops["PopVar"] = weighted_var_1D(find_props_ordered(
+        #     "county_subdivision_dec_Total population"), weights_spatial)
 
         newprops["PopSqKm"] = weighted_avg_1D(
             find_props_ordered("Population per Sqkm"), weights_spatial)
